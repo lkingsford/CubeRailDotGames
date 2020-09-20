@@ -1,0 +1,37 @@
+version: "3"
+services:
+    db:
+        build: ./db
+        container_name: db
+        restart: always
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_USER=train
+            - POSTGRES_PASSWORD=choochoo
+            - POSTGRES_DB=train
+        volumes:
+            - ./dbdata:/var/lib/postgresql/data
+
+    pgadmin4:
+        build: pgadmin
+        environment:
+            PGADMIN_DEFAULT_EMAIL: thelochok@gmail.com
+            PGADMIN_DEFAULT_PASSWORD: bob
+        ports:
+            - "8889:80"
+        volumes:
+            - /var/lib/pgadmin
+
+    dev:
+        build: dev
+        container_name: dev
+        user: node
+        working_dir: /home/node/app
+        volumes:
+            - ./node_modules:/home/node/app/node_modules
+            - ./build:/home/node/app/build
+            - ./dist:/home/node/app/dist
+            - ./vscode_dev_extensions:/home/node/.vscode-server/extensions
+            - .:/home/node/app
+    
