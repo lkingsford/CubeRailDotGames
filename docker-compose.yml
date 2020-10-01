@@ -11,7 +11,7 @@ services:
             - POSTGRES_PASSWORD=choochoo
             - POSTGRES_DB=train
         volumes:
-            - ./dbdata:/var/lib/postgresql/data
+            - /var/lib/postgresql/data
 
     pgadmin4:
         build: pgadmin
@@ -25,13 +25,6 @@ services:
 
     dev:
         build: dev
-        container_name: dev
         user: node
-        working_dir: /home/node/app
         volumes:
-            - ./node_modules:/home/node/app/node_modules
-            - ./build:/home/node/app/build
-            - ./dist:/home/node/app/dist
-            - ./vscode_dev_extensions:/home/node/.vscode-server/extensions
-            - .:/home/node/app
-    
+            - ./:/home/node/app
