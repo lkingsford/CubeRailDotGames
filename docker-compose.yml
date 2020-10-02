@@ -27,5 +27,9 @@ services:
         build: dev
         user: node
         volumes:
+            - /home/node/app/node-modules
             - ./:/home/node/app
             - /var/run/docker.sock:/var/run/docker-host.sock
+        dns:
+            - 208.67.222.222
+            - 127.0.0.11

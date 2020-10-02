@@ -31,7 +31,7 @@ RUN export LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/dock
 # Default to root only access to the Docker sock, set up non-root init script
 RUN ln -s /var/run/docker-host.sock /var/run/docker.sock \
     && apt-get update \
-    && apt-get -y install socat \
+    && apt-get -y install sudo socat \
     && echo '#!/bin/sh\n\
        sudo rm -rf /var/run/docker.sock\n\
        ((sudo socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user=node UNIX-CONNECT:/var/run/docker-host.sock) 2>&1 >> /tmp/vscr-dind-socat.log) & > /dev/null\n\
