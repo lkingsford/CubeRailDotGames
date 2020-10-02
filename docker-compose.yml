@@ -28,3 +28,4 @@ services:
         user: node
         volumes:
             - ./:/home/node/app
+            - /var/run/docker.sock:/var/run/docker-host.sock
