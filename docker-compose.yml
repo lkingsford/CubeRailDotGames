@@ -31,6 +31,7 @@ services:
             - /var/run/docker.sock:/var/run/docker-host.sock
         ports:
             - "3000:3000"
+            - "8000:8000"
         dns:
             - 208.67.222.222
             - 127.0.0.11

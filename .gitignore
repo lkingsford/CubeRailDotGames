@@ -3,3 +3,4 @@ vscode_dev_extensions
 node_modules
 build
 dist
+dist-client

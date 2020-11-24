@@ -20,10 +20,10 @@ module.exports = {
   },
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist-client'),
   },
   devServer: {
-      contentBase: 'dist',
+      contentBase: 'dist-client',
       port: 3000
   },
   plugins: [

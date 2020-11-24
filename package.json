@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --mode development --config webpack.config.dev.js",
-    "run_client": "webpack-dev-server --mode development --config webpack.config.dev.js --host 0.0.0.0"
+    "build": "concurrently \"npx tsc\" \"webpack --mode development --config webpack.config.dev.js\"",
+    "run_client": "webpack-dev-server --mode development --config webpack.config.dev.js --host 0.0.0.0",
+    "serve": "node dist/server/server.js",
+    "run": "npm build & concurrently \"npm:serve\" \"npm:run_client\""
   },
   "repository": {
     "type": "git",
@@ -19,10 +21,13 @@
   },
   "homepage": "https://github.com/lkingsford/mptest2#readme",
   "dependencies": {
+    "boardgame.io": "^0.40.0"
+  },
+  "devDependencies": {
     "@types/chai": "^4.2.12",
     "@types/mocha": "^8.0.3",
-    "boardgame.io": "^0.40.0",
     "chai": "^4.2.0",
+    "concurrently": "^5.3.0",
     "copy-webpack-plugin": "^6.1.1",
     "esm": "^3.2.25",
     "html-webpack-plugin": "^4.5.0",
