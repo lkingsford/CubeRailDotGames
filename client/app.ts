@@ -8,7 +8,7 @@ class TicTacToeClient {
     private rootElement: HTMLElement;
     constructor(rootElement: HTMLElement, playerID: string ) {
         this.rootElement = rootElement;
-        this.client = Client({ game: TicTacToe, multiplayer: SocketIO({server: 'localhost:8000'}), playerID });
+        this.client = Client({ game: TicTacToe, multiplayer: SocketIO({server: 'localhost:3500'}), playerID });
         this.client.start();
         this.client.subscribe((state: State) => this.update(state))
     }
@@ -21,4 +21,4 @@ class TicTacToeClient {
 }
 
 const appElement: HTMLElement = document.getElementById('app')!;
-const app = new TicTacToeClient(appElement, 'playername1');
+const app = new TicTacToeClient(appElement, '0');

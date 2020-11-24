@@ -6,6 +6,7 @@ export const TicTacToe = {
     moves: {
       clickCell: (G : any, ctx : any, id : any) => {
         G.cells[id] = ctx.currentPlayer;
+        console.log("Clicked");
       },
     },
   };

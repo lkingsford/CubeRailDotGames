@@ -31,7 +31,9 @@ services:
             - /var/run/docker.sock:/var/run/docker-host.sock
         ports:
             - "3000:3000"
-            - "8000:8000"
+            - "3500:3500"
+        environment:
+            - DB=postgres://train:choochoo@db:5432/train
         dns:
             - 208.67.222.222
             - 127.0.0.11
