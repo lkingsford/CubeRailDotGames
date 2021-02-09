@@ -22,7 +22,8 @@
   "homepage": "https://github.com/lkingsford/mptest2#readme",
   "dependencies": {
     "boardgame.io": "^0.42.0",
-    "koa": "^2.13.0"
+    "koa": "^2.13.0",
+    "koa-static": "^5.0.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.33",

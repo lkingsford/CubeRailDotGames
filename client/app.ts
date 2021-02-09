@@ -1,14 +1,14 @@
 import { Client } from 'boardgame.io/client';
 import { State } from 'boardgame.io';
 import { SocketIO } from 'boardgame.io/multiplayer'
-import { TicTacToe } from '../game/game';
+import { EmuBayRailwayCompany } from '../game/game';
 
-class TicTacToeClient {
+class EmuBayRailwayCompanyClient {
     private client: any;
     private rootElement: HTMLElement;
     constructor(rootElement: HTMLElement, playerID: string ) {
         this.rootElement = rootElement;
-        this.client = Client({ game: TicTacToe, multiplayer: SocketIO({server: 'localhost:3500'}), playerID });
+        this.client = Client({ game: EmuBayRailwayCompany, playerID, numPlayers: 3});
         this.client.start();
         this.client.subscribe((state: State) => this.update(state))
     }
@@ -21,4 +21,4 @@ class TicTacToeClient {
 }
 
 const appElement: HTMLElement = document.getElementById('app')!;
-const app = new TicTacToeClient(appElement, '0');
+const app = new EmuBayRailwayCompanyClient(appElement, '0');
