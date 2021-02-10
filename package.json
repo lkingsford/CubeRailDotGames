@@ -21,9 +21,11 @@
   },
   "homepage": "https://github.com/lkingsford/mptest2#readme",
   "dependencies": {
+    "@types/pixi.js": "^5.0.0",
     "boardgame.io": "^0.42.2",
     "koa": "^2.13.1",
-    "koa-static": "^5.0.0"
+    "koa-static": "^5.0.0",
+    "pixi.js": "^5.3.7"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.33",

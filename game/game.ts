@@ -43,9 +43,10 @@ interface ICompany {
   sharesHeld: number[];
   sharesRemaining: number;
   reservedSharesRemaining: number;
+  home?: ICoordinates;
 }
 
-interface IEmuBayState {
+export interface IEmuBayState {
   players: IPlayer[];
   companies: ICompany[];
   actionCubeLocations: boolean[];
@@ -75,11 +76,12 @@ interface ITerrain {
   secondCost: number | null;
   revenueRequiresTown: boolean;
   revenue: number[];
+  textureIndex: number;
   locations: ILocation[];
 }
 
 // This should be generatable, or compatible with 18xxMaker or something
-const MAP: ITerrain[] = [
+export const MAP: ITerrain[] = [
   {
     biomeName: "Farmland",
     canPlaceResource: false,
@@ -87,6 +89,7 @@ const MAP: ITerrain[] = [
     secondCost: 8,
     revenueRequiresTown: true,
     revenue: [2],
+    textureIndex: 0,
     locations: [{ x: 1, y: 1 },
     { x: 3, y: 2 },
     { x: 3, y: 3 },
@@ -115,6 +118,7 @@ const MAP: ITerrain[] = [
     secondCost: 10,
     revenueRequiresTown: false,
     revenue: [0],
+    textureIndex: 3,
     locations: [{ x: 1, y: 4, label: "Port of Strahan" },
     { x: 4, y: 1, label: "Port of Burnie" },
     { x: 5, y: 1, label: "Port of Devenport" },
@@ -128,6 +132,7 @@ const MAP: ITerrain[] = [
     secondCost: null,
     revenueRequiresTown: false,
     revenue: [1],
+    textureIndex: 1,
     locations: [{ x: 1, y: 2 },
     { x: 1, y: 3 },
     { x: 2, y: 1 },
@@ -138,7 +143,7 @@ const MAP: ITerrain[] = [
     { x: 4, y: 3 },
     { x: 4, y: 8 },
     { x: 5, y: 4 },
-    { x: 5, y: 4 },
+    { x: 5, y: 5 },
     { x: 6, y: 6 },
     { x: 6, y: 7 },
     { x: 6, y: 8 },
@@ -158,6 +163,7 @@ const MAP: ITerrain[] = [
     secondCost: null,
     revenueRequiresTown: false,
     revenue: [2],
+    textureIndex: 4,
     locations: [{ x: 2, y: 2 },
     { x: 3, y: 4 },
     { x: 3, y: 5 },
@@ -179,6 +185,7 @@ const MAP: ITerrain[] = [
     secondCost: 10,
     revenueRequiresTown: false,
     revenue: [2, 4, 6],
+    textureIndex: 2,
     locations: [{ x: 5, y: 2, label: "Devenport" },
     { x: 7, y: 3, label: "Launceston" },
     { x: 7, y: 7, label: "Hobart" }],
@@ -278,7 +285,8 @@ export const CompanyInitialState: ICompany[] = [
     bonds: [],
     sharesHeld: [],
     sharesRemaining: 2,
-    reservedSharesRemaining: 4
+    reservedSharesRemaining: 4,
+    home: {x: 2, y: 3}
   },
   {
     // TMLC
@@ -290,7 +298,8 @@ export const CompanyInitialState: ICompany[] = [
     bonds: [],
     sharesHeld: [],
     sharesRemaining: 4,
-    reservedSharesRemaining: 0
+    reservedSharesRemaining: 0,
+    home: {x: 7, y: 3}
   },
   {
     // LW
@@ -302,7 +311,8 @@ export const CompanyInitialState: ICompany[] = [
     bonds: [],
     sharesHeld: [],
     sharesRemaining: 3,
-    reservedSharesRemaining: 0
+    reservedSharesRemaining: 0,
+    home: {x: 7, y: 3}
   },
   {
     // GT
