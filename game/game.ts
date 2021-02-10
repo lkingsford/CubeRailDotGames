@@ -60,6 +60,7 @@ interface IEmuBayState {
   playerInitialBidder?: number;
   auctionFinished?: boolean;
   anyTrackBuilt?: boolean;
+  independentAvailable?: CompanyID | null;
 };
 
 interface ILocation extends ICoordinates {
@@ -220,6 +221,7 @@ function initialAuctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
     return;
   }
   G.playerAfterAuction = G.companies[CompanyID.GT].sharesHeld[0];
+  setNextIndependent(G);
   G.auctionFinished = true;
   ctx.events!.setPhase!('normalPlay');
 }
@@ -231,98 +233,109 @@ function auctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
   G.companies[G.companyForAuction!].sharesHeld.push(G.winningBidder!);
   G.playerAfterAuction = G.winningBidder;
   G.auctionFinished = true;
+  // Make the next independent available
+  setNextIndependent(G);
   ctx.events!.setPhase!('normalPlay');
 }
 
+function setNextIndependent(G: IEmuBayState) {
+  var notSold = IndependentOrder.filter((i) => G.companies[i].sharesHeld.length == 0);
+  if (notSold.length == 0) {
+    G.independentAvailable = null;
+  } else {
+    G.independentAvailable = notSold[0];
+  }
+}
 
 export const InitialAuctionOrder = [CompanyID.LW, CompanyID.TMLC, CompanyID.EB, CompanyID.GT]
+export const IndependentOrder = [CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF];
 
 const IndependentStartingRevenue = 3;
 
 export const CompanyInitialState: ICompany[] = [
   {
     // EB
-   cash: 0,
-   trainsRemaining: 4,
-   narrowGaugeRemaining: 0,
-   resourcesHeld: 0,
-   currentRevenue: 1,
-   bonds: [],
-   sharesHeld: [],
-   sharesRemaining: 2,
-   reservedSharesRemaining: 4
+    cash: 0,
+    trainsRemaining: 4,
+    narrowGaugeRemaining: 0,
+    resourcesHeld: 0,
+    currentRevenue: 1,
+    bonds: [],
+    sharesHeld: [],
+    sharesRemaining: 2,
+    reservedSharesRemaining: 4
   },
   {
     // TMLC
-   cash: 0,
-   trainsRemaining: 8,
-   narrowGaugeRemaining: 0,
-   resourcesHeld: 0,
-   currentRevenue: 2,
-   bonds: [],
-   sharesHeld: [],
-   sharesRemaining: 4,
-   reservedSharesRemaining: 0
+    cash: 0,
+    trainsRemaining: 8,
+    narrowGaugeRemaining: 0,
+    resourcesHeld: 0,
+    currentRevenue: 2,
+    bonds: [],
+    sharesHeld: [],
+    sharesRemaining: 4,
+    reservedSharesRemaining: 0
   },
   {
     // LW
-   cash: 0,
-   trainsRemaining: 7,
-   narrowGaugeRemaining: 0,
-   resourcesHeld: 0,
-   currentRevenue: 2,
-   bonds: [],
-   sharesHeld: [],
-   sharesRemaining: 3,
-   reservedSharesRemaining: 0
+    cash: 0,
+    trainsRemaining: 7,
+    narrowGaugeRemaining: 0,
+    resourcesHeld: 0,
+    currentRevenue: 2,
+    bonds: [],
+    sharesHeld: [],
+    sharesRemaining: 3,
+    reservedSharesRemaining: 0
   },
   {
     // GT
-   cash: 10,
-   trainsRemaining: 0,
-   narrowGaugeRemaining: 2,
-   resourcesHeld: 0,
-   currentRevenue: IndependentStartingRevenue,
-   bonds: [ { deferred: true, baseInterest: 3, interestDelta: 1}],
-   sharesHeld: [],
-   sharesRemaining: 1,
-   reservedSharesRemaining: 0
+    cash: 10,
+    trainsRemaining: 0,
+    narrowGaugeRemaining: 2,
+    resourcesHeld: 0,
+    currentRevenue: IndependentStartingRevenue,
+    bonds: [{ deferred: true, baseInterest: 3, interestDelta: 1 }],
+    sharesHeld: [],
+    sharesRemaining: 1,
+    reservedSharesRemaining: 0
   },
   {
     // MLM
-   cash: 15,
-   trainsRemaining: 0,
-   narrowGaugeRemaining: 3,
-   resourcesHeld: 0,
-   currentRevenue: IndependentStartingRevenue,
-   bonds: [ { deferred: true, baseInterest: 4, interestDelta: 1}],
-   sharesHeld: [],
-   sharesRemaining: 1,
-   reservedSharesRemaining: 0
+    cash: 15,
+    trainsRemaining: 0,
+    narrowGaugeRemaining: 3,
+    resourcesHeld: 0,
+    currentRevenue: IndependentStartingRevenue,
+    bonds: [{ deferred: true, baseInterest: 4, interestDelta: 1 }],
+    sharesHeld: [],
+    sharesRemaining: 1,
+    reservedSharesRemaining: 0
   },
   {
     // NED
-   cash: 15,
-   trainsRemaining: 0,
-   narrowGaugeRemaining: 3,
-   resourcesHeld: 0,
-   currentRevenue: IndependentStartingRevenue,
-   bonds: [ { deferred: true, baseInterest: 6, interestDelta: 1}],
-   sharesHeld: [],
-   sharesRemaining: 1,
-   reservedSharesRemaining: 0
+    cash: 15,
+    trainsRemaining: 0,
+    narrowGaugeRemaining: 3,
+    resourcesHeld: 0,
+    currentRevenue: IndependentStartingRevenue,
+    bonds: [{ deferred: true, baseInterest: 6, interestDelta: 1 }],
+    sharesHeld: [],
+    sharesRemaining: 1,
+    reservedSharesRemaining: 0
   },
   {
     // NMF
-   cash: 15,
-   trainsRemaining: 0,
-   narrowGaugeRemaining: 4,
-   resourcesHeld: 0,
-   currentRevenue: IndependentStartingRevenue,
-   bonds: [ { deferred: true, baseInterest: 7, interestDelta: 1}],
-   sharesHeld: [],
-   sharesRemaining: 1,
-   reservedSharesRemaining: 0
+    cash: 15,
+    trainsRemaining: 0,
+    narrowGaugeRemaining: 4,
+    resourcesHeld: 0,
+    currentRevenue: IndependentStartingRevenue,
+    bonds: [{ deferred: true, baseInterest: 7, interestDelta: 1 }],
+    sharesHeld: [],
+    sharesRemaining: 1,
+    reservedSharesRemaining: 0
   },
 ]
 
@@ -357,16 +370,14 @@ export const EmuBayRailwayCompany = {
           first: (G: IEmuBayState, ctx: Ctx) => 0,
           next: (G: IEmuBayState, ctx: Ctx) => {
             var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);
-            if (!G.auctionFinished) 
-            {
+            if (!G.auctionFinished) {
               var nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
               while (G.passed![+ctx.playOrder[nextPlayerPos]]) {
                 nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
               }
               return nextPlayerPos;
             }
-            else
-            {
+            else {
               // For some reason, boardgame.io still runs this after phase change - 
               // so go to the sensible thing that it will need next
               return ctx.playOrder.indexOf(G.playerAfterAuction!.toString());
@@ -431,11 +442,21 @@ export const EmuBayRailwayCompany = {
               auctionShare: (G: IEmuBayState, ctx: Ctx, company: number) => {
                 G.playerAfterAuction = (ctx.playOrderPos + 1) % ctx.numPlayers;
                 G.companyForAuction = company;
-                if (G.players[+ctx.currentPlayer].cash < getMinimumBid(G))
-                {
+                if (G.players[+ctx.currentPlayer].cash < getMinimumBid(G)) {
                   console.log("Player must be able to pay minimum bid");
                   return INVALID_MOVE;
                 }
+                if (G.companies[company].sharesRemaining <= 0) {
+                  console.log("No shares remaining");
+                  return INVALID_MOVE;
+                }
+                // Check that it's the next independent available if it's independent
+                if ([CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF].includes(company)) {
+                  if (company != G.independentAvailable) {
+                    console.log("Independent not available");
+                  }
+                }
+
                 G.playerInitialBidder = +ctx.currentPlayer;
               },
               issueBond: (G: IEmuBayState, ctx: Ctx, company: number) => {
@@ -466,9 +487,9 @@ export const EmuBayRailwayCompany = {
         }
       }
     },
-    "auction" : {
+    "auction": {
       // There is more copy paste here than there should be
-     onBegin: (G: IEmuBayState, ctx: Ctx) => {
+      onBegin: (G: IEmuBayState, ctx: Ctx) => {
         G.passed = new Array(ctx.numPlayers).fill(false);
         G.currentBid = 0;
         G.winningBidder = 0;
@@ -479,16 +500,14 @@ export const EmuBayRailwayCompany = {
         order: {
           first: (G: IEmuBayState, ctx: Ctx) => 0,
           next: (G: IEmuBayState, ctx: Ctx) => {
-            if (!G.auctionFinished) 
-            {
+            if (!G.auctionFinished) {
               var nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
               while (G.passed![+ctx.playOrder[nextPlayerPos]]) {
                 nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
               }
               return nextPlayerPos;
             }
-            else
-            {
+            else {
               // For some reason, boardgame.io still runs this after phase change - 
               // so go to the sensible thing that it will need next
               return ctx.playOrder.indexOf(G.playerAfterAuction!.toString());
@@ -511,10 +530,14 @@ export const EmuBayRailwayCompany = {
           }
         },
         pass: (G: IEmuBayState, ctx: Ctx) => {
+          if (G.currentBid == 0 && +ctx.currentPlayer == G.playerInitialBidder) {
+            // First player must bid
+            return INVALID_MOVE;
+          }
           G.passed![+ctx.currentPlayer] = true;
           var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);
           if (biddersRemaining <= 1) {
-            if (G.currentBid != 0 || biddersRemaining == 0) {
+            if (biddersRemaining == 0) {
               // All other players passed and bid made, or all players passed
               auctionCompanyWon(G, ctx);
             }
