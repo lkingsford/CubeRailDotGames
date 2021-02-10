@@ -49,7 +49,7 @@ interface IEmuBayState {
   players: IPlayer[];
   companies: ICompany[];
   actionCubeLocations: boolean[];
-  actionCubeTakenFrom?: actions;
+  actionCubeTakenFrom?: actions | null;
   resourceCubes: ICoordinates[];
   track: ITrackBuilt[];
   currentBid?: number;
@@ -420,13 +420,12 @@ export const EmuBayRailwayCompany = {
           },
           next: (G: IEmuBayState, ctx: Ctx) => (ctx.playOrderPos + 1) % ctx.numPlayers
         },
-        onBegin: (G: IEmuBayState, ctx: Ctx) => { ctx.events!.setStage!("removeCube") },
+        onBegin: (G: IEmuBayState, ctx: Ctx) => {
+          ctx.events!.setStage!("removeCube")
+        },
         stages: {
           removeCube: {
             moves: {
-              removeCube: (G: IEmuBayState, ctx: Ctx, space: number) => {
-                // Remove a cube to place
-              }
             },
             turn: {
               moveLimit: 1
@@ -435,7 +434,23 @@ export const EmuBayRailwayCompany = {
           },
           takeAction: {
             moves: {
+              removeCube: (G: IEmuBayState, ctx: Ctx, space: number) => {
+                // Remove a cube to place
+                G.actionCubeTakenFrom = ACTION_CUBE_LOCATION_ACTIONS[space];
+                G.actionCubeLocations[space] = false;
+              },
               buildTrack: (G: IEmuBayState, ctx: Ctx, company: number) => {
+                if (G.actionCubeTakenFrom == actions.BuildTrack) {
+                  console.log("Must take different action to removed action cube")
+                  return INVALID_MOVE;
+                }
+                var availableSpaces = ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
+                  .filter(v => v.value == actions.BuildTrack)
+                  .filter(v => G.actionCubeLocations[v.idx] == false);
+                if (availableSpaces.length == 0) {
+                  console.log("No action spaces available");
+                  return INVALID_MOVE;
+                }
               },
               mineResource: (G: IEmuBayState, ctx: Ctx, company: number) => {
               },
@@ -521,7 +536,7 @@ export const EmuBayRailwayCompany = {
             G.winningBidder = +ctx.currentPlayer;
             G.currentBid = amount;
             var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);
-            if (biddersRemaining = 1) {
+            if (biddersRemaining == 1) {
               auctionCompanyWon(G, ctx);
             }
           }
