@@ -59,7 +59,7 @@ interface IEmuBayState {
   playerAfterAuction?: number;
   playerInitialBidder?: number;
   auctionFinished?: boolean;
-  anyTrackBuilt?: boolean;
+  anyActionsTaken?: boolean;
   independentAvailable?: CompanyID | null;
 };
 
@@ -231,11 +231,11 @@ function auctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
   G.players[G.winningBidder!].cash -= G.currentBid!;
   G.companies[G.companyForAuction!].cash += G.currentBid!;
   G.companies[G.companyForAuction!].sharesHeld.push(G.winningBidder!);
-  G.playerAfterAuction = G.winningBidder;
   G.auctionFinished = true;
   // Make the next independent available
   setNextIndependent(G);
   ctx.events!.setPhase!('normalPlay');
+  ctx.events!.endTurn!({next: G.playerAfterAuction });
 }
 
 function setNextIndependent(G: IEmuBayState) {
@@ -245,6 +245,21 @@ function setNextIndependent(G: IEmuBayState) {
   } else {
     G.independentAvailable = notSold[0];
   }
+}
+
+function jiggleCubes(G: IEmuBayState, actionToTake: actions): string | void {
+  if (G.actionCubeTakenFrom == actionToTake) {
+    console.log("Must take different action to removed action cube")
+    return INVALID_MOVE;
+  }
+  var availableSpaces = ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
+    .filter(v => v.value == actionToTake)
+    .filter(v => G.actionCubeLocations[v.idx] == false);
+  if (availableSpaces.length == 0) {
+    console.log("No action spaces available");
+    return INVALID_MOVE;
+  }
+  G.actionCubeLocations[availableSpaces[0].idx] = true
 }
 
 export const InitialAuctionOrder = [CompanyID.LW, CompanyID.TMLC, CompanyID.EB, CompanyID.GT]
@@ -421,40 +436,49 @@ export const EmuBayRailwayCompany = {
           next: (G: IEmuBayState, ctx: Ctx) => (ctx.playOrderPos + 1) % ctx.numPlayers
         },
         onBegin: (G: IEmuBayState, ctx: Ctx) => {
-          ctx.events!.setStage!("removeCube")
+          ctx.events!.setStage!("removeCube");
+          // Had to do this, as active player was regularly wrong
+          ctx.events?.setActivePlayers!({
+            currentPlayer: { stage: "removeCube", moveLimit: 1 }
+          });
+          G.anyActionsTaken = false;
         },
         stages: {
           removeCube: {
             moves: {
+              removeCube: (G: IEmuBayState, ctx: Ctx, space: number) => {
+                if (!G.actionCubeLocations[space]) {
+                  console.log("No cube to remove")
+                  return INVALID_MOVE;
+                }
+                // Remove a cube to place
+                G.actionCubeTakenFrom = ACTION_CUBE_LOCATION_ACTIONS[space];
+                G.actionCubeLocations[space] = false;
+                ctx.events?.setStage!("takeAction");
+              },
             },
             turn: {
               moveLimit: 1
             },
-            next: "takeAction"
           },
           takeAction: {
             moves: {
-              removeCube: (G: IEmuBayState, ctx: Ctx, space: number) => {
-                // Remove a cube to place
-                G.actionCubeTakenFrom = ACTION_CUBE_LOCATION_ACTIONS[space];
-                G.actionCubeLocations[space] = false;
-              },
               buildTrack: (G: IEmuBayState, ctx: Ctx, company: number) => {
-                if (G.actionCubeTakenFrom == actions.BuildTrack) {
-                  console.log("Must take different action to removed action cube")
+                if (jiggleCubes(G, actions.BuildTrack) == INVALID_MOVE) {
                   return INVALID_MOVE;
-                }
-                var availableSpaces = ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
-                  .filter(v => v.value == actions.BuildTrack)
-                  .filter(v => G.actionCubeLocations[v.idx] == false);
-                if (availableSpaces.length == 0) {
-                  console.log("No action spaces available");
-                  return INVALID_MOVE;
-                }
+                } ;
+                ctx.events?.setStage!("buildingTrack");
               },
               mineResource: (G: IEmuBayState, ctx: Ctx, company: number) => {
+                if (jiggleCubes(G, actions.TakeResources) == INVALID_MOVE) {
+                  return INVALID_MOVE;
+                } ;
+                ctx.events?.setStage!("takeResources");
               },
               auctionShare: (G: IEmuBayState, ctx: Ctx, company: number) => {
+                if (jiggleCubes(G, actions.AuctionShare) == INVALID_MOVE) {
+                  return INVALID_MOVE;
+                } ;
                 G.playerAfterAuction = (ctx.playOrderPos + 1) % ctx.numPlayers;
                 G.companyForAuction = company;
                 if (G.players[+ctx.currentPlayer].cash < getMinimumBid(G)) {
@@ -473,10 +497,19 @@ export const EmuBayRailwayCompany = {
                 }
 
                 G.playerInitialBidder = +ctx.currentPlayer;
+
+                ctx.events?.setPhase!("auction");
               },
               issueBond: (G: IEmuBayState, ctx: Ctx, company: number) => {
+                if (jiggleCubes(G, actions.IssueBond) == INVALID_MOVE) {
+                  return INVALID_MOVE;
+                } ;
               },
               payDividends: (G: IEmuBayState, ctx: Ctx) => {
+                if (jiggleCubes(G, actions.PayDividend) == INVALID_MOVE) {
+                  return INVALID_MOVE;
+                } ;
+                ctx.events?.endTurn!();
               },
             },
             turn: {
@@ -487,11 +520,29 @@ export const EmuBayRailwayCompany = {
             moves: {
               buildTrack: (G: IEmuBayState, ctx: Ctx, x: number, y: number, narrowGauge: boolean) => {
               },
-              done: (G: IEmuBayState, ctx: Ctx) => {
-                if (!G.anyTrackBuilt) {
+              doneBuilding: (G: IEmuBayState, ctx: Ctx) => {
+                if (!G.anyActionsTaken) {
                   console.log("No track built - can't pass");
                   return INVALID_MOVE;
                 }
+                ctx.events?.endTurn!();
+              }
+            },
+            turn: {
+              moveLimit: 3
+            },
+            next: "takeAction"
+          },
+          takeResources: {
+            moves: {
+              takeResource: (G: IEmuBayState, ctx: Ctx, x: number, y: number) => {
+              },
+              doneTaking: (G: IEmuBayState, ctx: Ctx) => {
+                if (!G.anyActionsTaken) {
+                  console.log("No resources taken - can't pass");
+                  return INVALID_MOVE;
+                }
+                ctx.events?.endTurn!();
               }
             },
             turn: {
@@ -552,10 +603,7 @@ export const EmuBayRailwayCompany = {
           G.passed![+ctx.currentPlayer] = true;
           var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);
           if (biddersRemaining <= 1) {
-            if (biddersRemaining == 0) {
-              // All other players passed and bid made, or all players passed
-              auctionCompanyWon(G, ctx);
-            }
+            auctionCompanyWon(G, ctx);
           }
         },
       },
