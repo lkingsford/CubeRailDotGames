@@ -2,9 +2,11 @@ import * as PIXI from 'pixi.js'
 import * as State from './state'
 import { IEmuBayState, MAP } from '../game/game'
 
+import { Ctx } from 'boardgame.io';
+
 export class Board extends State.State {
     constructor(app: PIXI.Application,
-                resources: { [index: string]: PIXI.LoaderResource }) {
+        resources: { [index: string]: PIXI.LoaderResource }) {
         super(app, resources);
         let width = app.screen.width;
         let height = app.screen.height;
@@ -17,14 +19,15 @@ export class Board extends State.State {
         this.playfield.scale = new PIXI.Point(0.6, 0.6);
 
         this.terrain = new PIXI.Container();
-        this.terrain.y = this.statusHeight;
+        this.terrain.x = this.statusWidth;
         this.playfield.addChild(this.terrain);
 
         this.statusArea = new PIXI.Container();
-        this.statusArea.height = this.statusHeight;
+        this.statusArea.width = this.statusWidth;
+        this.container.addChild(this.statusArea);
     }
 
-    statusHeight = 300;
+    statusWidth = 250;
 
     playfield?: PIXI.Container;
     terrain?: PIXI.Container;
@@ -45,14 +48,14 @@ export class Board extends State.State {
     }
 
     private static TILE_WIDTH = 187;
-    private static TILE_HEIGHT = 215 ;
+    private static TILE_HEIGHT = 215;
     private static OFFSET_X = -50;
     private static OFFSET_Y = -50;
 
-    public drawMap(gamestate: IEmuBayState): void {
+    public drawMap(gamestate: IEmuBayState, ctx: Ctx): void {
         // Obviously, not for use in animation
         this.terrain?.removeChildren();
-         MAP.forEach((terrain) => {
+        MAP.forEach((terrain) => {
             var texture = Board.tileTextures[terrain.textureIndex];
             terrain.locations.forEach(xy => {
                 let tileSprite = new PIXI.Sprite(texture);
@@ -62,24 +65,72 @@ export class Board extends State.State {
                 tileSprite.anchor = new PIXI.Point(0.5, 0.5);
                 this.terrain!.addChild(tileSprite);
             });
-         });
+        });
 
-         gamestate.companies.forEach((co, i) => {
-             if (co.home) {
-                 var texture = Board.companyTextures[i];
-                 let homeSprite = new PIXI.Sprite(texture);
-                 let special_offset = 0;
-                 // Special, because two companies start in the same place
-                 if (i == 2) { special_offset = Board.TILE_WIDTH * -.3};
-                 if (i == 1) { special_offset = Board.TILE_WIDTH * .3};
+        gamestate.companies.forEach((co, i) => {
+            if (co.home) {
+                var texture = Board.companyTextures[i];
+                let homeSprite = new PIXI.Sprite(texture);
+                let special_offset = 0;
+                // Special, because two companies start in the same place
+                if (i == 2) { special_offset = Board.TILE_WIDTH * -.3 };
+                if (i == 1) { special_offset = Board.TILE_WIDTH * .3 };
                 homeSprite.x = Board.TILE_WIDTH * co.home.x + Board.OFFSET_X + special_offset;
                 homeSprite.y = Board.TILE_HEIGHT * co.home.y + Board.OFFSET_Y +
                     (co.home.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0);
                 homeSprite.anchor = new PIXI.Point(0.5, 0.5);
                 this.terrain!.addChild(homeSprite);
-             }
-         })
+            }
+        })
+
+        this.statusArea?.removeChildren();
+        var currentY = 0;
+        var lineHeight = 30;
+        var statusX = 10;
+        gamestate.players.forEach((p, i) => {
+            var nameStyle = new PIXI.TextStyle();
+            if (+ctx.currentPlayer == i) {
+                nameStyle.fill = "0x0033ff";
+            }
+            var nameSprite = new PIXI.Text(
+                `Player ${i}`, nameStyle);
+            nameSprite.x = statusX;
+            nameSprite.y = currentY;
+            this.statusArea?.addChild(nameSprite);
+
+            currentY += lineHeight;
+            var cashSprite = new PIXI.Text(`₤${p.cash}`)
+            cashSprite.x = statusX;
+            cashSprite.y = currentY;
+            this.statusArea?.addChild(cashSprite);
+
+            currentY += lineHeight;
+
+            gamestate.companies.forEach((c, j) => {
+                var held = c.sharesHeld.filter((s) => s == i).length;
+                if (held == 0) {
+                    return
+                };
+                var shareText: string;
+                if (held == 1) {
+                    shareText = Board.COMPANY_ABBREV[j];
+                } else {
+                    shareText = `${held} × ${Board.COMPANY_ABBREV[j]}`;
+                };
+                var shareStyle = new PIXI.TextStyle({fill: Board.COMPANY_COLORS[j]});
+                var shareTextSprite = new PIXI.Text(shareText, shareStyle);
+                shareTextSprite.x = statusX;
+                shareTextSprite.y = currentY;
+                this.statusArea?.addChild(shareTextSprite);
+                currentY += lineHeight;
+            });
+
+            currentY += lineHeight * 1.5;
+        })
     }
+
+    static COMPANY_COLORS = ["0x0000ff", "0xdddd00", "0x00dd00", "0xff0000", "0xff0020", "0xff0030", "0xff0040"];
+    static COMPANY_ABBREV = ["EBR", "TMLC", "LW", "GT", "MLM", "NED", "NMF"]
 
     public static addResources(loader: PIXI.Loader): void {
         loader.add("map_tiles", "assets/MapTiles.png");
@@ -95,8 +146,7 @@ export class Board extends State.State {
     private static COMPANY_TILE_HEIGHT = 128;
     private static COMPANY_TILE_Y = 768;
 
-    static getTextures(resources: { [index: string]: PIXI.LoaderResource }) 
-    {
+    static getTextures(resources: { [index: string]: PIXI.LoaderResource }) {
         Board.tileTextures = {};
         for (let ix = 0; ix < 3; ix++) {
             for (let iy = 0; iy < 2; iy++) {
@@ -110,11 +160,11 @@ export class Board extends State.State {
 
         Board.companyTextures = {};
         for (let ix = 0; ix < 7; ix++) {
-                let srcX = ix * Board.COMPANY_TILE_WIDTH;
-                let srcY = Board.COMPANY_TILE_Y;
-                // TODO: Maybe this shouldn't be hardcoded yaknow
-                Board.companyTextures[ix ] = new PIXI.Texture(resources["map_tiles"].texture.baseTexture as PIXI.BaseTexture,
-                    new PIXI.Rectangle(srcX, srcY, Board.COMPANY_TILE_WIDTH, Board.COMPANY_TILE_HEIGHT));
+            let srcX = ix * Board.COMPANY_TILE_WIDTH;
+            let srcY = Board.COMPANY_TILE_Y;
+            // TODO: Maybe this shouldn't be hardcoded yaknow
+            Board.companyTextures[ix] = new PIXI.Texture(resources["map_tiles"].texture.baseTexture as PIXI.BaseTexture,
+                new PIXI.Rectangle(srcX, srcY, Board.COMPANY_TILE_WIDTH, Board.COMPANY_TILE_HEIGHT));
         }
     }
 }

@@ -22,7 +22,7 @@ class EmuBayRailwayCompanyClient {
     public startLoop(resources: { [index: string]: PIXI.LoaderResource }): void {
         let mapState = new Board(this.pixiApp, resources);
         mapState.start();
-        this.client.subscribe((state: State) => mapState.drawMap(state.G as IEmuBayState))
+        this.client.subscribe((state: State) => mapState.drawMap(state.G as IEmuBayState, state.ctx));
         //this.client.subscribe((state: State) => mapState.updateStatus(state.G as IEmuBayState))
     }
 }
