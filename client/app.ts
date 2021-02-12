@@ -15,7 +15,7 @@ class EmuBayRailwayCompanyClient {
         this.client.start();
     }
 
-    public pixiApp = new PIXI.Application({backgroundColor: 0xEEEEFF});
+    public pixiApp = new PIXI.Application({backgroundColor: 0xEEEEFF, width: 1000, height: 1000});
 
     private mapState?: Board;
 
@@ -46,4 +46,3 @@ loader.load((loader: PIXI.Loader, resources: Partial<Record<string, PIXI.LoaderR
   
 
 document.body.appendChild(app.pixiApp.view)
-app.pixiApp.resizeTo = window;

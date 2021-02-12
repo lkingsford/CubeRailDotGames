@@ -16,7 +16,7 @@ export class Board extends State.State {
 
         this.playfield = new PIXI.Container();
         this.container.addChild(this.playfield);
-        this.playfield.scale = new PIXI.Point(0.6, 0.6);
+        this.playfield.scale = new PIXI.Point(this.view_scale, this.view_scale);
 
         this.terrain = new PIXI.Container();
         this.terrain.x = this.statusWidth;
@@ -49,8 +49,9 @@ export class Board extends State.State {
 
     private static TILE_WIDTH = 187;
     private static TILE_HEIGHT = 215;
-    private static OFFSET_X = -50;
+    private static OFFSET_X = -250;
     private static OFFSET_Y = -50;
+    private view_scale = 0.5;
 
     public drawMap(gamestate: IEmuBayState, ctx: Ctx): void {
         // Obviously, not for use in animation

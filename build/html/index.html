@@ -6,24 +6,19 @@
   <style>
     html,
     body {
-      height: 100%;
-      margin: 0;
     }
 
     body {
       display: flex;
       display: -webkit-flex;
-      -webkit-justify-content: center;
-      justify-content: center;
-      -webkit-align-items: center;
-      align-items: center;
+      flex-wrap: wrap;
     }
 
     canvas {
-      display: block;
       outline: none;
-      height: 100%;
-      width: 100%;
+    }
+
+    #board {
     }
   </style>
 </head>
@@ -36,7 +31,9 @@
   thingy();
 </script>
 <body>
-  <div id="app"></div>
+  <div id="board">
+    <div id="app"></div>
+  </div>
 </body>
 
 </html>
