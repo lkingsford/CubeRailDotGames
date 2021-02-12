@@ -4,22 +4,56 @@
   <title>Emu Bay Railway Company</title>
   <meta charset="utf-8" />
   <style>
-    html,
-    body {
-    }
-
-    body {
-      display: flex;
-      display: -webkit-flex;
-      flex-wrap: wrap;
-    }
-
     canvas {
       outline: none;
     }
 
-    #board {
+    .grid {
+      position: relative;
     }
+    .item {
+      display: block;
+      position: absolute;
+      width: 200px;
+      margin: 5px;
+      z-index: 1;
+      color: #fff;
+      background: #050;
+      border: 2px solid black;
+    }
+    .item.muuri-item-dragging {
+      z-index: 3;
+    }
+    .item.muuri-item-releasing {
+      z-index: 2;
+    }
+    .item.muuri-item-hidden {
+      z-index: 0;
+    }
+
+    .card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .card h1 {
+      width: 100%;
+      font-size: 1.5em;
+      font-weight: bolder;
+      font-variant-caps: all-petite-caps ;
+      background-color: gray;
+      position: relative;
+      padding: .5 em;
+      margin: 0;
+    }
+
+    #boarditem {
+      width: 1000px;
+      height: 1030px;
+      background: #EEEEFF;
+    }
+
   </style>
 </head>
 </head>
@@ -31,9 +65,11 @@
   thingy();
 </script>
 <body>
-  <div id="board">
-    <div id="app"></div>
+  <div id="maingrid">
+    <div class="item" id="boarditem"><div class="card" id="boardcontent">
+      <h1>Map</h1>
+      <div class="content" id="board"></div>
+    </div></div>
   </div>
 </body>
-
 </html>

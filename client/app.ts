@@ -3,6 +3,7 @@ import { State } from 'boardgame.io';
 import { SocketIO } from 'boardgame.io/multiplayer'
 import { EmuBayRailwayCompany, IEmuBayState } from '../game/game';
 import { Board } from './board';
+import { Ui } from './ui';
 
 import * as PIXI from 'pixi.js'
 
@@ -17,13 +18,12 @@ class EmuBayRailwayCompanyClient {
 
     public pixiApp = new PIXI.Application({backgroundColor: 0xEEEEFF, width: 1000, height: 1000});
 
-    private mapState?: Board;
-
     public startLoop(resources: { [index: string]: PIXI.LoaderResource }): void {
-        let mapState = new Board(this.pixiApp, resources);
+        let mapState: Board = new Board(this.pixiApp, resources);
+        let theUi = new Ui()
         mapState.start();
         this.client.subscribe((state: State) => mapState.drawMap(state.G as IEmuBayState, state.ctx));
-        //this.client.subscribe((state: State) => mapState.updateStatus(state.G as IEmuBayState))
+        this.client.subscribe((state: State) => theUi.update(state.G as IEmuBayState, state.ctx));
     }
 }
 
@@ -45,4 +45,4 @@ loader.load((loader: PIXI.Loader, resources: Partial<Record<string, PIXI.LoaderR
 
   
 
-document.body.appendChild(app.pixiApp.view)
+document.querySelector("#board")?.appendChild(app.pixiApp.view)
