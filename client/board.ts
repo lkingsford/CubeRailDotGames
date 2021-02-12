@@ -82,55 +82,7 @@ export class Board extends State.State {
                 this.terrain!.addChild(homeSprite);
             }
         })
-
-        this.statusArea?.removeChildren();
-        var currentY = 0;
-        var lineHeight = 30;
-        var statusX = 10;
-        gamestate.players.forEach((p, i) => {
-            var nameStyle = new PIXI.TextStyle();
-            if (+ctx.currentPlayer == i) {
-                nameStyle.fill = "0x0033ff";
-            }
-            var nameSprite = new PIXI.Text(
-                `Player ${i}`, nameStyle);
-            nameSprite.x = statusX;
-            nameSprite.y = currentY;
-            this.statusArea?.addChild(nameSprite);
-
-            currentY += lineHeight;
-            var cashSprite = new PIXI.Text(`₤${p.cash}`)
-            cashSprite.x = statusX;
-            cashSprite.y = currentY;
-            this.statusArea?.addChild(cashSprite);
-
-            currentY += lineHeight;
-
-            gamestate.companies.forEach((c, j) => {
-                var held = c.sharesHeld.filter((s) => s == i).length;
-                if (held == 0) {
-                    return
-                };
-                var shareText: string;
-                if (held == 1) {
-                    shareText = Board.COMPANY_ABBREV[j];
-                } else {
-                    shareText = `${held} × ${Board.COMPANY_ABBREV[j]}`;
-                };
-                var shareStyle = new PIXI.TextStyle({fill: Board.COMPANY_COLORS[j]});
-                var shareTextSprite = new PIXI.Text(shareText, shareStyle);
-                shareTextSprite.x = statusX;
-                shareTextSprite.y = currentY;
-                this.statusArea?.addChild(shareTextSprite);
-                currentY += lineHeight;
-            });
-
-            currentY += lineHeight * 1.5;
-        })
     }
-
-    static COMPANY_COLORS = ["0x0000ff", "0xdddd00", "0x00dd00", "0xff0000", "0xff0020", "0xff0030", "0xff0040"];
-    static COMPANY_ABBREV = ["EBR", "TMLC", "LW", "GT", "MLM", "NED", "NMF"]
 
     public static addResources(loader: PIXI.Loader): void {
         loader.add("map_tiles", "assets/MapTiles.png");

@@ -34,6 +34,9 @@ const loader = PIXI.Loader.shared;
 Board.addResources(loader);
 
 
+const COMPANY_COLORS = ["0x0000ff", "0xdddd00", "0x00dd00", "0xff0000", "0xee0000", "0xdd0000", "0xcc0000"];
+const COMPANY_ABBREV = ["EBR", "TMLC", "LW", "GT", "MLM", "NED", "NMF"]
+
 loader.load((loader: PIXI.Loader, resources: Partial<Record<string, PIXI.LoaderResource>>) => {
     console.log("Resources loaded");
     Board.getTextures(loader.resources)
