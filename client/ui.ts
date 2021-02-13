@@ -1,4 +1,5 @@
 import { Ctx } from "boardgame.io";
+import { Client } from "boardgame.io/dist/types/packages/client";
 import { IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS } from "../game/game";
 
 const muuri = require("muuri/dist/muuri")
@@ -11,7 +12,7 @@ const COMPANY_NAME = ["Emu Bay Railway Co.", "Tasmanian Main Line Railroad",
 const ACTIONS = ["Build track", "Auction Share", "Take Resource", "Issue Bond", "Merge Private", "Pay Dividend"];
 
 export class Ui {
-    public update(gamestate: IEmuBayState, ctx: Ctx): void {
+    public update(gamestate: IEmuBayState, ctx: Ctx, client: any): void {
         // Action selector
         {
             let outerDiv = document.querySelector(`#actions`);
@@ -39,15 +40,33 @@ export class Ui {
             }
 
             contentDiv!.innerHTML = '';
+            let statusDiv = document.createElement("div");
+            statusDiv.classList.add("actionStatus");
+            contentDiv?.appendChild(statusDiv);
+
             let actionsDiv = document.createElement("div")
             actionsDiv.classList.add("actioncontainer");
             contentDiv?.appendChild(actionsDiv);
+
+            let stage = "nostage";
+            if (ctx.activePlayers) {
+                stage = ctx.activePlayers![0];
+            }
+
+            switch (stage) {
+                case "takeAction":
+                    statusDiv.innerText = "Choose an action"
+                    break;
+                case "removeCube":
+                    statusDiv.innerText = "Remove a cube"
+                    break;
+            }
+
             ACTIONS.forEach((actionName, idx) => {
                 let actionDiv = document.createElement("div");
                 actionDiv.innerText = actionName;
                 actionDiv.classList.add("actionbox");
-                actionsDiv?.appendChild(actionDiv);
-                
+
                 let availableSpaceCount =
                     ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
                         .filter(v => v.value == idx)
@@ -62,9 +81,30 @@ export class Ui {
 
                 let spacesP = document.createElement("p");
                 spacesP.classList.add("actioncubes")
-                spacesP.innerText = "☐".repeat(availableSpaceCount)+"■".repeat(filledSpaceCount);
+                spacesP.innerText = "□".repeat(availableSpaceCount) + "■".repeat(filledSpaceCount);
                 actionDiv?.appendChild(spacesP);
-            })
+
+                actionDiv!.dataset.actionid = idx.toString();
+                actionDiv!.onclick = (ev) => {
+                    if (stage == "removeCube") {
+                        client.moves.removeCube(+(ev.currentTarget as HTMLDivElement)!.dataset!.actionid!)
+                    }
+                }
+
+                if (stage == "removeCube") {
+                    if (filledSpaceCount > 0) {
+                        actionDiv.classList.add("chooseableaction")
+                    }
+                }
+
+                if (stage == "takeAction") {
+                    if (availableSpaceCount > 0 && idx != gamestate.actionCubeTakenFrom) {
+                        actionDiv.classList.add("chooseableaction")
+                    }
+                }
+
+                actionsDiv?.appendChild(actionDiv);
+            });
         }
 
         // Player states

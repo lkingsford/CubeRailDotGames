@@ -23,7 +23,7 @@ class EmuBayRailwayCompanyClient {
         let theUi = new Ui()
         mapState.start();
         this.client.subscribe((state: State) => mapState.drawMap(state.G as IEmuBayState, state.ctx));
-        this.client.subscribe((state: State) => theUi.update(state.G as IEmuBayState, state.ctx));
+        this.client.subscribe((state: State) => theUi.update(state.G as IEmuBayState, state.ctx, this.client));
     }
 }
 

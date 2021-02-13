@@ -243,7 +243,7 @@ function auctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
   // Make the next independent available
   setNextIndependent(G);
   ctx.events!.setPhase!('normalPlay');
-  ctx.events!.endTurn!({next: G.playerAfterAuction });
+  ctx.events!.endTurn!({ next: G.playerAfterAuction });
 }
 
 function setNextIndependent(G: IEmuBayState) {
@@ -287,7 +287,7 @@ export const CompanyInitialState: ICompany[] = [
     sharesHeld: [],
     sharesRemaining: 2,
     reservedSharesRemaining: 4,
-    home: {x: 2, y: 3}
+    home: { x: 2, y: 3 }
   },
   {
     // TMLC
@@ -300,7 +300,7 @@ export const CompanyInitialState: ICompany[] = [
     sharesHeld: [],
     sharesRemaining: 4,
     reservedSharesRemaining: 0,
-    home: {x: 7, y: 3}
+    home: { x: 7, y: 3 }
   },
   {
     // LW
@@ -313,7 +313,7 @@ export const CompanyInitialState: ICompany[] = [
     sharesHeld: [],
     sharesRemaining: 3,
     reservedSharesRemaining: 0,
-    home: {x: 7, y: 3}
+    home: { x: 7, y: 3 }
   },
   {
     // GT
@@ -457,14 +457,19 @@ export const EmuBayRailwayCompany = {
         stages: {
           removeCube: {
             moves: {
-              removeCube: (G: IEmuBayState, ctx: Ctx, space: number) => {
-                if (!G.actionCubeLocations[space]) {
+              removeCube: (G: IEmuBayState, ctx: Ctx, action: actions) => {
+                let filledSpaces =
+                  ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
+                    .filter(v => v.value == action)
+                    .filter(v => G.actionCubeLocations[v.idx] == true);
+                  let filledSpaceCount = filledSpaces.length;
+                if (filledSpaceCount == 0) {
                   console.log("No cube to remove")
                   return INVALID_MOVE;
                 }
                 // Remove a cube to place
-                G.actionCubeTakenFrom = ACTION_CUBE_LOCATION_ACTIONS[space];
-                G.actionCubeLocations[space] = false;
+                G.actionCubeTakenFrom = action;
+                G.actionCubeLocations[filledSpaces[0].idx] = false;
                 ctx.events?.setStage!("takeAction");
               },
             },
@@ -477,19 +482,19 @@ export const EmuBayRailwayCompany = {
               buildTrack: (G: IEmuBayState, ctx: Ctx, company: number) => {
                 if (jiggleCubes(G, actions.BuildTrack) == INVALID_MOVE) {
                   return INVALID_MOVE;
-                } ;
+                };
                 ctx.events?.setStage!("buildingTrack");
               },
               mineResource: (G: IEmuBayState, ctx: Ctx, company: number) => {
                 if (jiggleCubes(G, actions.TakeResources) == INVALID_MOVE) {
                   return INVALID_MOVE;
-                } ;
+                };
                 ctx.events?.setStage!("takeResources");
               },
               auctionShare: (G: IEmuBayState, ctx: Ctx, company: number) => {
                 if (jiggleCubes(G, actions.AuctionShare) == INVALID_MOVE) {
                   return INVALID_MOVE;
-                } ;
+                };
                 G.playerAfterAuction = (ctx.playOrderPos + 1) % ctx.numPlayers;
                 G.companyForAuction = company;
                 if (G.players[+ctx.currentPlayer].cash < getMinimumBid(G)) {
@@ -514,12 +519,12 @@ export const EmuBayRailwayCompany = {
               issueBond: (G: IEmuBayState, ctx: Ctx, company: number) => {
                 if (jiggleCubes(G, actions.IssueBond) == INVALID_MOVE) {
                   return INVALID_MOVE;
-                } ;
+                };
               },
               payDividends: (G: IEmuBayState, ctx: Ctx) => {
                 if (jiggleCubes(G, actions.PayDividend) == INVALID_MOVE) {
                   return INVALID_MOVE;
-                } ;
+                };
                 ctx.events?.endTurn!();
               },
             },
