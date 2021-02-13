@@ -210,6 +210,7 @@ export class Ui {
                         let bidS = document.createElement("span");
                         bidS.innerText = bid.toString();
                         bidS.classList.add("chooseableaction");
+                        bidS.classList.add("bid");
                         bidS.dataset.bid = bid.toString();
                         bidS.onclick = (bidS_ev) => {
                             client.moves.makeBid(+((bidS_ev.currentTarget as HTMLElement)!.dataset.bid!));

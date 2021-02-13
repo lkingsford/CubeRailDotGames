@@ -12,7 +12,7 @@ class EmuBayRailwayCompanyClient {
     private rootElement: HTMLElement;
     constructor(rootElement: HTMLElement, playerID: string ) {
         this.rootElement = rootElement;
-        this.client = Client({ game: EmuBayRailwayCompany, playerID, numPlayers: 3});
+        this.client = Client({ game: EmuBayRailwayCompany, numPlayers: 3});
         this.client.start();
     }
 
