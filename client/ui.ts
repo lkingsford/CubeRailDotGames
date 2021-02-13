@@ -89,6 +89,61 @@ export class Ui {
                     if (stage == "removeCube") {
                         client.moves.removeCube(+(ev.currentTarget as HTMLDivElement)!.dataset!.actionid!)
                     }
+
+                    if (stage == "takeAction") {
+                        switch (+(ev.currentTarget as HTMLDivElement)!.dataset!.actionid!) {
+                            case actions.AuctionShare:
+                                this.clearActionExtras();
+                                let auctionExtraDiv = document.createElement("div");
+                                auctionExtraDiv.classList.add("actionextra");
+
+                                let toList = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
+                                    .filter((c) => {
+                                        // If a public company, or private but next, and share available - list
+                                        if (c.value.sharesRemaining == 0) { return false; }
+                                        if (c.idx > 3 && c.idx != gamestate.independentAvailable) { return false; }
+                                        return true;
+                                    })
+                                let dirH1 = document.createElement("h1");
+                                dirH1.innerText = "Pick a company to auction";
+                                auctionExtraDiv.appendChild(dirH1);
+                                if (toList.length == 0) {
+                                    let warningP = document.createElement("p");
+                                    warningP.innerText = "No shares available";
+                                    auctionExtraDiv.appendChild(warningP);
+                                }
+                                else {
+                                    toList.forEach((i)=>{
+                                        let coP = document.createElement("p");
+                                        coP.classList.add(COMPANY_ABBREV[i.idx]);
+                                        coP.classList.add("chooseableaction");
+                                        coP.innerText = COMPANY_NAME[i.idx];
+                                        coP.dataset.co = i.idx.toString();
+                                        coP.onclick = (cop_ev) => {
+                                            client.moves.auctionShare(+(cop_ev.currentTarget as HTMLElement)!.dataset!.co!);
+                                        }
+                                        auctionExtraDiv.appendChild(coP);
+                                    })
+                                }
+                                contentDiv?.appendChild(auctionExtraDiv);
+                                break;
+                            case actions.BuildTrack:
+                                this.clearActionExtras();
+                                break;
+                            case actions.IssueBond:
+                                this.clearActionExtras();
+                                break;
+                            case actions.Merge:
+                                this.clearActionExtras();
+                                break;
+                            case actions.PayDividend:
+                                this.clearActionExtras();
+                                client.moves.payDividends();
+                        }
+                    }
+
+                    grid.refreshItems();
+                    grid.layout();
                 }
 
                 if (stage == "removeCube") {
@@ -229,5 +284,10 @@ export class Ui {
         // Size may have changed - rearrange them
         grid.refreshItems();
         grid.layout();
+    }
+
+    // Clear the additional 'extra data' selector things from actions
+    private clearActionExtras() {
+        document.querySelectorAll(`#actions .card .content .actionextra`)?.forEach((i) => i.remove());
     }
 }

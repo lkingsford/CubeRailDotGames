@@ -219,6 +219,7 @@ function initialAuctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
   G.players[G.winningBidder!].cash -= G.currentBid!;
   G.companies[G.companyForAuction!].cash += G.currentBid!;
   G.companies[G.companyForAuction!].sharesHeld.push(G.winningBidder!);
+  G.companies[G.companyForAuction!].sharesRemaining -= 1;
 
   var auctionNumber = InitialAuctionOrder.indexOf(G.companyForAuction!);
   if ((auctionNumber + 1) < InitialAuctionOrder.length) {
