@@ -13,10 +13,11 @@ enum CompanyID {
   NMF
 }
 
-interface IBond {
+export interface IBond {
   deferred: boolean;
   baseInterest: number;
   interestDelta: number;
+  amount: number;
 }
 
 interface IPlayer {
@@ -62,6 +63,7 @@ export interface IEmuBayState {
   auctionFinished?: boolean;
   anyActionsTaken?: boolean;
   independentAvailable?: CompanyID | null;
+  bonds: IBond[];
 };
 
 interface ILocation extends ICoordinates {
@@ -323,7 +325,7 @@ export const CompanyInitialState: ICompany[] = [
     narrowGaugeRemaining: 2,
     resourcesHeld: 0,
     currentRevenue: IndependentStartingRevenue,
-    bonds: [{ deferred: true, baseInterest: 3, interestDelta: 1 }],
+    bonds: [{ deferred: true, amount: 10, baseInterest: 3, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
     reservedSharesRemaining: 0
@@ -335,7 +337,7 @@ export const CompanyInitialState: ICompany[] = [
     narrowGaugeRemaining: 3,
     resourcesHeld: 0,
     currentRevenue: IndependentStartingRevenue,
-    bonds: [{ deferred: true, baseInterest: 4, interestDelta: 1 }],
+    bonds: [{ deferred: true, amount: 15, baseInterest: 4, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
     reservedSharesRemaining: 0
@@ -347,7 +349,7 @@ export const CompanyInitialState: ICompany[] = [
     narrowGaugeRemaining: 3,
     resourcesHeld: 0,
     currentRevenue: IndependentStartingRevenue,
-    bonds: [{ deferred: true, baseInterest: 6, interestDelta: 1 }],
+    bonds: [{ deferred: true, amount: 15, baseInterest: 6, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
     reservedSharesRemaining: 0
@@ -359,11 +361,19 @@ export const CompanyInitialState: ICompany[] = [
     narrowGaugeRemaining: 4,
     resourcesHeld: 0,
     currentRevenue: IndependentStartingRevenue,
-    bonds: [{ deferred: true, baseInterest: 7, interestDelta: 1 }],
+    bonds: [{ deferred: true, amount: 15, baseInterest: 7, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
     reservedSharesRemaining: 0
   },
+]
+
+const INITIAL_AVAILABLE_BONDS: IBond[] = [
+  { deferred: true, amount: 10, baseInterest: 6, interestDelta: 1 },
+  { deferred: true, amount: 20, baseInterest: 7, interestDelta: 2 },
+  { deferred: true, amount: 20, baseInterest: 8, interestDelta: 2 },
+  { deferred: true, amount: 30, baseInterest: 9, interestDelta: 2 },
+  { deferred: true, amount: 30, baseInterest: 10, interestDelta: 2 },
 ]
 
 // TODO: Detect when there is a stalemate
@@ -377,7 +387,8 @@ export const EmuBayRailwayCompany = {
       // Starting with take resources spaces filled and pay dividends filled
       actionCubeLocations: [false, false, false, false, false, true, true, true, false, false, true],
       resourceCubes: [],
-      track: []
+      track: [],
+      bonds: Array.from(INITIAL_AVAILABLE_BONDS),
     }
   },
 
@@ -519,10 +530,12 @@ export const EmuBayRailwayCompany = {
 
                 ctx.events?.setPhase!("auction");
               },
-              issueBond: (G: IEmuBayState, ctx: Ctx, company: number) => {
+              issueBond: (G: IEmuBayState, ctx: Ctx, company: number, bond: number) => {
                 if (jiggleCubes(G, actions.IssueBond) == INVALID_MOVE) {
                   return INVALID_MOVE;
                 };
+                G.companies[company].bonds.push(G.bonds[bond]);
+                G.bonds.splice(bond, 1);
               },
               payDividends: (G: IEmuBayState, ctx: Ctx) => {
                 if (jiggleCubes(G, actions.PayDividend) == INVALID_MOVE) {

@@ -1,6 +1,6 @@
 import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
-import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS } from "../game/game";
+import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond } from "../game/game";
 
 const muuri = require("muuri/dist/muuri")
 var grid = new muuri("#maingrid", { dragEnabled: true, layout: { fillGaps: true } });
@@ -86,6 +86,7 @@ export class Ui {
 
                 actionDiv!.dataset.actionid = idx.toString();
                 actionDiv!.onclick = (ev) => {
+                    if (!(ev.currentTarget as HTMLElement).classList.contains("chooseableaction")) { return; }
                     if (stage == "removeCube") {
                         client.moves.removeCube(+(ev.currentTarget as HTMLDivElement)!.dataset!.actionid!)
                     }
@@ -94,44 +95,14 @@ export class Ui {
                         switch (+(ev.currentTarget as HTMLDivElement)!.dataset!.actionid!) {
                             case actions.AuctionShare:
                                 this.clearActionExtras();
-                                let auctionExtraDiv = document.createElement("div");
-                                auctionExtraDiv.classList.add("actionextra");
-
-                                let toList = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
-                                    .filter((c) => {
-                                        // If a public company, or private but next, and share available - list
-                                        if (c.value.sharesRemaining == 0) { return false; }
-                                        if (c.idx > 3 && c.idx != gamestate.independentAvailable) { return false; }
-                                        return true;
-                                    })
-                                let dirH1 = document.createElement("h1");
-                                dirH1.innerText = "Pick a company to auction";
-                                auctionExtraDiv.appendChild(dirH1);
-                                if (toList.length == 0) {
-                                    let warningP = document.createElement("p");
-                                    warningP.innerText = "No shares available";
-                                    auctionExtraDiv.appendChild(warningP);
-                                }
-                                else {
-                                    toList.forEach((i) => {
-                                        let coP = document.createElement("p");
-                                        coP.classList.add(COMPANY_ABBREV[i.idx]);
-                                        coP.classList.add("chooseableaction");
-                                        coP.innerText = COMPANY_NAME[i.idx];
-                                        coP.dataset.co = i.idx.toString();
-                                        coP.onclick = (cop_ev) => {
-                                            client.moves.auctionShare(+(cop_ev.currentTarget as HTMLElement)!.dataset!.co!);
-                                        }
-                                        auctionExtraDiv.appendChild(coP);
-                                    })
-                                }
-                                contentDiv?.appendChild(auctionExtraDiv);
+                                contentDiv?.appendChild(this.auctionShareExtra(gamestate, ctx, client));
                                 break;
                             case actions.BuildTrack:
                                 this.clearActionExtras();
                                 break;
                             case actions.IssueBond:
                                 this.clearActionExtras();
+                                contentDiv?.appendChild(this.issueBondExtra(gamestate, ctx, client));
                                 break;
                             case actions.Merge:
                                 this.clearActionExtras();
@@ -161,8 +132,7 @@ export class Ui {
             });
 
             let phase = ctx.phase;
-            if (phase == "auction" || phase == "initialAuction")
-            {
+            if (phase == "auction" || phase == "initialAuction") {
                 let auctionH1 = document.createElement("h1");
                 auctionH1.innerText = "Auction"
                 contentDiv?.append(auctionH1);
@@ -180,30 +150,26 @@ export class Ui {
 
                 let statusP = document.createElement("p");
                 let statusText = "";
-                if (gamestate.currentBid == 0)
-                { 
-                    statusText = "No bids" 
+                if (gamestate.currentBid == 0) {
+                    statusText = "No bids"
                 }
-                else
-                {
-                     statusText = `Player ${gamestate.winningBidder} winning on ₤${gamestate.currentBid}`;
+                else {
+                    statusText = `Player ${gamestate.winningBidder} winning on ₤${gamestate.currentBid}`;
                 }
-                
+
                 statusP.innerText = statusText;
 
                 // Can only pass during initial auction, or if you're not required to make initial bid
-                if (phase == "initialAuction" || (phase == "auction" && gamestate.currentBid! > 0))
-                {
+                if (phase == "initialAuction" || (phase == "auction" && gamestate.currentBid! > 0)) {
                     let passP = document.createElement("p");
                     passP.innerText = "Pass";
                     passP.classList.add("chooseableaction");
-                    passP.onclick = (pass_ev)=>{client.moves.pass();};
+                    passP.onclick = (pass_ev) => { client.moves.pass(); };
                     contentDiv?.appendChild(passP);
                 }
 
                 let minBid = Math.max(getMinimumBid(gamestate), gamestate.currentBid! + 1);
-                if (playerCash >= minBid)
-                {
+                if (playerCash >= minBid) {
                     let bidsP = document.createElement("p");
                     bidsP.innerText = "Bid: ";
                     for (let bid = minBid; bid <= playerCash; ++bid) {
@@ -338,7 +304,54 @@ export class Ui {
                 rsrP.innerText = `${co.reservedSharesRemaining} reserved shares remaining`;
                 contentDiv?.append(rsrP);
             }
+
+            if (co.bonds.length > 0) {
+                let bondsP = document.createElement("p")
+                bondsP.innerText = `Bonds issued: `;
+                contentDiv?.append(bondsP);
+
+                co.bonds.forEach((i) => {
+                    let bondP = document.createElement("p")
+                    bondP.innerText = this.bondToString(i);
+                    contentDiv?.append(bondP);
+                })
+            }
         });
+
+        // Bonds
+        {
+            let outerDiv = document.querySelector(`#bonds`);
+            let contentDiv = document.querySelector(`#bonds .card .content`);
+            let cardDiv = document.querySelector(`#bonds .card`)
+            if (!outerDiv) {
+                outerDiv = document.createElement("div");
+                outerDiv.id = `bonds`;
+                document.querySelector("#maingrid")?.appendChild(outerDiv);
+                outerDiv.classList.add("item");
+
+                cardDiv = document.createElement("div");
+                outerDiv.appendChild(cardDiv);
+                cardDiv.classList.add("card");
+
+                let h = document.createElement("h1");
+                h.innerText = `Bonds Remaining`
+                cardDiv.appendChild(h);
+
+                contentDiv = document.createElement("div");
+                cardDiv.appendChild(contentDiv);
+                contentDiv.classList.add("content")
+
+                grid.add(outerDiv);
+            };
+
+            contentDiv!.innerHTML = "";
+
+            gamestate.bonds.forEach((i) => {
+                let bondP = document.createElement("p");
+                bondP.innerText = this.bondToString(i, false);
+                contentDiv?.appendChild(bondP);
+            });
+        };
 
         // Map always at bottom
         grid.move(document.querySelector("#boarditem"), -1);
@@ -351,5 +364,118 @@ export class Ui {
     // Clear the additional 'extra data' selector things from actions
     private clearActionExtras() {
         document.querySelectorAll(`#actions .card .content .actionextra`)?.forEach((i) => i.remove());
+    }
+
+    private auctionShareExtra(gamestate: IEmuBayState, ctx: Ctx, client: any): HTMLElement {
+        let auctionExtraDiv = document.createElement("div");
+        auctionExtraDiv.classList.add("actionextra");
+
+        let toList = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
+            .filter((c) => {
+                // If a public company, or private but next, and share available - list
+                if (c.value.sharesRemaining == 0) { return false; }
+                if (c.idx > 3 && c.idx != gamestate.independentAvailable) { return false; }
+                return true;
+            })
+        let dirH1 = document.createElement("h1");
+        dirH1.innerText = "Pick a company to auction";
+        auctionExtraDiv.appendChild(dirH1);
+        if (toList.length == 0) {
+            let warningP = document.createElement("p");
+            warningP.innerText = "No shares available";
+            auctionExtraDiv.appendChild(warningP);
+        }
+        else {
+            toList.forEach((i) => {
+                let coP = document.createElement("p");
+                coP.classList.add(COMPANY_ABBREV[i.idx]);
+                coP.classList.add("chooseableaction");
+                coP.innerText = COMPANY_NAME[i.idx];
+                coP.dataset.co = i.idx.toString();
+                coP.onclick = (cop_ev) => {
+                    client.moves.auctionShare(+(cop_ev.currentTarget as HTMLElement)!.dataset!.co!);
+                }
+                auctionExtraDiv.appendChild(coP);
+            })
+        }
+        return auctionExtraDiv;
+    }
+
+    private issueBondExtra(gamestate: IEmuBayState, ctx: Ctx, client: any): HTMLElement {
+        let issueBondExtraDiv = document.createElement("div");
+        issueBondExtraDiv.classList.add("actionextra");
+
+        let available = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
+            .filter((c) => {
+                // Have to have share, has to not be private
+                if (c.idx >= 3) { return false; }
+                if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length > 0) { return true };
+                return false;
+            })
+        let dirH1 = document.createElement("h1");
+        dirH1.innerText = "Pick a company to issue";
+        issueBondExtraDiv.appendChild(dirH1);
+        if (gamestate.bonds.length == 0) {
+            let warningP = document.createElement("p");
+            warningP.innerText = "No bonds remaining";
+            issueBondExtraDiv.appendChild(warningP);
+        }
+        else {
+            available.forEach((i) => {
+                let coP = document.createElement("p");
+                coP.classList.add(COMPANY_ABBREV[i.idx]);
+                coP.classList.add("chooseableaction");
+                coP.classList.add("coToChoose")
+                coP.innerText = COMPANY_NAME[i.idx];
+                coP.dataset.co = i.idx.toString();
+                coP.onclick = (cop_ev) => {
+                    let element = (cop_ev.currentTarget as HTMLElement)
+                    let co = +element!.dataset!.co!;
+                    document.querySelectorAll(`.coToChoose:not([data-co="${co}"])`).forEach((i) => (i as HTMLElement).remove());
+                    element.classList.remove("chooseableaction")
+                    element.onclick = null;
+                    issueBondExtraDiv.appendChild(this.issueBondExtra2(gamestate, ctx, client, co));
+                    grid.refreshItems();
+                    grid.layout();
+                }
+                issueBondExtraDiv.appendChild(coP);
+            })
+        }
+
+        grid.refreshItems();
+        grid.layout();
+
+        return issueBondExtraDiv;
+    }
+
+    private issueBondExtra2(gamestate: IEmuBayState, ctx: Ctx, client: any, company: number): HTMLElement {
+        let issueBondExtraDiv = document.createElement("div");
+        issueBondExtraDiv.classList.add("actionextra");
+        let dirH1 = document.createElement("h1");
+        dirH1.innerText = "Pick a bond to issue";
+        issueBondExtraDiv.appendChild(dirH1);
+        let bondsP = document.createElement("p");
+        gamestate.bonds.forEach((bond, idx) => {
+            let bondS = document.createElement("span");
+            bondS.classList.add("chooseableaction");
+            bondS.innerText = this.bondToString(bond, false);
+            bondS.dataset!.bondId = idx.toString();
+            bondS.onclick = (ev) => {
+                client.moves.issueBond(company, +(ev.currentTarget as HTMLElement)!.dataset!.bondId!);
+            }
+            bondsP.appendChild(bondS);
+        })
+        issueBondExtraDiv.appendChild(bondsP);
+
+        return issueBondExtraDiv;
+    }
+
+    private bondToString(bond: IBond, held: boolean = true): string {
+        if (held) {
+            return `₤${bond.amount!} (₤${bond.baseInterest}Δ₤${bond.interestDelta}/div)${bond.deferred ? " (def)" : ""}`;
+        }
+        else {
+            return `₤${bond.amount!} (₤${bond.baseInterest}Δ₤${bond.interestDelta}/div)`;
+        }
     }
 }
