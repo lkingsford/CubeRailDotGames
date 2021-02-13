@@ -1,6 +1,6 @@
 import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
-import { IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS } from "../game/game";
+import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS } from "../game/game";
 
 const muuri = require("muuri/dist/muuri")
 var grid = new muuri("#maingrid", { dragEnabled: true, layout: { fillGaps: true } });
@@ -50,7 +50,7 @@ export class Ui {
 
             let stage = "nostage";
             if (ctx.activePlayers) {
-                stage = ctx.activePlayers![0];
+                stage = ctx.activePlayers![+ctx.currentPlayer];
             }
 
             switch (stage) {
@@ -113,7 +113,7 @@ export class Ui {
                                     auctionExtraDiv.appendChild(warningP);
                                 }
                                 else {
-                                    toList.forEach((i)=>{
+                                    toList.forEach((i) => {
                                         let coP = document.createElement("p");
                                         coP.classList.add(COMPANY_ABBREV[i.idx]);
                                         coP.classList.add("chooseableaction");
@@ -157,9 +157,70 @@ export class Ui {
                         actionDiv.classList.add("chooseableaction")
                     }
                 }
-
                 actionsDiv?.appendChild(actionDiv);
             });
+
+            let phase = ctx.phase;
+            if (phase == "auction" || phase == "initialAuction")
+            {
+                let auctionH1 = document.createElement("h1");
+                auctionH1.innerText = "Auction"
+                contentDiv?.append(auctionH1);
+
+                let auctionH2 = document.createElement("h2");
+                auctionH2.innerText = `Auctioning ${COMPANY_NAME[gamestate.companyForAuction!]}`;
+                auctionH2.classList.add(COMPANY_ABBREV[gamestate.companyForAuction!]);
+                contentDiv?.append(auctionH2);
+
+                let playerCash = gamestate.players[+ctx.currentPlayer].cash;
+
+                let playerH2 = document.createElement("h2");
+                playerH2.innerText = `Player ${ctx.currentPlayer} (₤${playerCash})`;
+                contentDiv?.append(playerH2);
+
+                let statusP = document.createElement("p");
+                let statusText = "";
+                if (gamestate.currentBid == 0)
+                { 
+                    statusText = "No bids" 
+                }
+                else
+                {
+                     statusText = `Player ${gamestate.winningBidder} winning on ₤${gamestate.currentBid}`;
+                }
+                
+                statusP.innerText = statusText;
+
+                // Can only pass during initial auction, or if you're not required to make initial bid
+                if (phase == "initialAuction" || (phase == "auction" && gamestate.currentBid! > 0))
+                {
+                    let passP = document.createElement("p");
+                    passP.innerText = "Pass";
+                    passP.classList.add("chooseableaction");
+                    passP.onclick = (pass_ev)=>{client.moves.pass();};
+                    contentDiv?.appendChild(passP);
+                }
+
+                let minBid = Math.max(getMinimumBid(gamestate), gamestate.currentBid! + 1);
+                if (playerCash >= minBid)
+                {
+                    let bidsP = document.createElement("p");
+                    bidsP.innerText = "Bid: ";
+                    for (let bid = minBid; bid <= playerCash; ++bid) {
+                        let bidS = document.createElement("span");
+                        bidS.innerText = bid.toString();
+                        bidS.classList.add("chooseableaction");
+                        bidS.dataset.bid = bid.toString();
+                        bidS.onclick = (bidS_ev) => {
+                            client.moves.makeBid(+((bidS_ev.currentTarget as HTMLElement)!.dataset.bid!));
+                        }
+                        bidsP.appendChild(bidS);
+                    }
+                    contentDiv?.appendChild(bidsP);
+                }
+
+                contentDiv?.append(statusP);
+            }
         }
 
         // Player states

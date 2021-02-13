@@ -210,7 +210,7 @@ actions.IssueBond,
 actions.Merge,
 actions.PayDividend];
 
-function getMinimumBid(G: IEmuBayState) {
+export function getMinimumBid(G: IEmuBayState) {
   var sharesHeldCount = G.companies[G.companyForAuction!].sharesHeld.length + 1;
   return Math.max(1, Math.ceil(G.companies[G.companyForAuction!].currentRevenue / sharesHeldCount));
 }
@@ -418,7 +418,7 @@ export const EmuBayRailwayCompany = {
             G.winningBidder = +ctx.currentPlayer;
             G.currentBid = amount;
             var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);
-            if (biddersRemaining = 1) {
+            if (biddersRemaining == 1) {
               initialAuctionCompanyWon(G, ctx);
             }
           }
