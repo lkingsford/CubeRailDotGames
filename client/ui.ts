@@ -3,7 +3,7 @@ import { Client } from "boardgame.io/dist/types/packages/client";
 import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond } from "../game/game";
 
 const muuri = require("muuri/dist/muuri")
-var grid = new muuri("#maingrid", { dragEnabled: true, layout: { fillGaps: true } });
+var grid = new muuri("#maingrid", { dragEnabled: true, layout: {} });
 
 const COMPANY_ABBREV = ["EBR", "TMLC", "LW", "GT", "MLM", "NED", "NMF"]
 const COMPANY_NAME = ["Emu Bay Railway Co.", "Tasmanian Main Line Railroad",
