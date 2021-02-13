@@ -398,9 +398,11 @@ export const EmuBayRailwayCompany = {
           next: (G: IEmuBayState, ctx: Ctx) => {
             var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);
             if (!G.auctionFinished) {
-              var nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
+              let nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
               while (G.passed![+ctx.playOrder[nextPlayerPos]]) {
-                nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
+                console.log("next player pos", nextPlayerPos);
+                nextPlayerPos = (nextPlayerPos + 1) % ctx.numPlayers;
+                console.log("after next player pos", nextPlayerPos);
               }
               return nextPlayerPos;
             }
