@@ -376,14 +376,27 @@ const INITIAL_AVAILABLE_BONDS: IBond[] = [
   { deferred: true, amount: 30, baseInterest: 10, interestDelta: 2 },
 ]
 
+// Bonds that are randomly given to the 3 companies
+const STARTING_BONDS: IBond[] = [
+  { deferred: true, amount: 0, baseInterest: 0, interestDelta: 0},
+  { deferred: true, amount: 10, baseInterest: 5, interestDelta: 1},
+  { deferred: true, amount: 15, baseInterest: 5, interestDelta: 2},
+]
+
 // TODO: Detect when there is a stalemate
 export const EmuBayRailwayCompany = {
   setup: (ctx: Ctx): IEmuBayState => {
+    let companies = Array.from(CompanyInitialState);
+    let bondOrder = ctx.random?.Shuffle(STARTING_BONDS);
+    bondOrder?.forEach((i, idx)=>{
+      companies[idx].bonds.push(i);
+      companies[idx].cash = i.amount;
+    });
     return {
       players: [...new Array(ctx.numPlayers)].map((): IPlayer => ({
         cash: Math.ceil(STARTING_CASH / ctx.numPlayers)
       })),
-      companies: Array.from(CompanyInitialState),
+      companies: companies,
       // Starting with take resources spaces filled and pay dividends filled
       actionCubeLocations: [false, false, false, false, false, true, true, true, false, false, true],
       resourceCubes: [],
