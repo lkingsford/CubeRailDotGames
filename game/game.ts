@@ -194,7 +194,7 @@ export const MAP: ITerrain[] = [
 
 const STARTING_CASH = 24;
 
-enum actions {
+export enum actions {
   BuildTrack,
   AuctionShare,
   TakeResources,
@@ -202,7 +202,8 @@ enum actions {
   Merge,
   PayDividend
 }
-const ACTION_CUBE_LOCATION_ACTIONS = [actions.BuildTrack, actions.BuildTrack, actions.BuildTrack,
+
+export const ACTION_CUBE_LOCATION_ACTIONS = [actions.BuildTrack, actions.BuildTrack, actions.BuildTrack,
 actions.AuctionShare, actions.AuctionShare,
 actions.TakeResources, actions.TakeResources, actions.TakeResources,
 actions.IssueBond,
