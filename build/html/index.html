@@ -14,7 +14,7 @@
     .item {
       display: block;
       position: absolute;
-      width: 200px;
+      min-width: 200px;
       margin: 5px;
       z-index: 1;
       color: #000000;
@@ -51,9 +51,13 @@
     }
 
     .card .content {
-      font-size: 1.5em;
+      font-size: 1em;
       margin: 0;
       padding: 0;
+    }
+
+    .cash {
+      font-size: 1.5em;
     }
 
     .card .content p {
@@ -73,6 +77,10 @@
       height: 1050px;
     }
 
+    .companyCard {
+      width: 200px;
+    }
+
     p.EBR {
       color: #0022ff;
     }
@@ -85,8 +93,24 @@
       color: #009900;
     }
 
-    p.GT, p.MLM, p.NED, p.NMF {
+    p.GT,p.MLM,p.NED,p.NMF {
       color: #cc0000;
+    }
+
+    h1.EBR {
+      background-color: #0022ff;
+    }
+
+    h1.TMLC {
+      background-color: #999900;
+    }
+
+    h1.LW {
+      background-color: #009900;
+    }
+
+    h1.GT,h1.MLM,h1.NED,h1.NMF {
+      background-color: #cc0000;
     }
 
 
