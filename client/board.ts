@@ -37,7 +37,7 @@ export class Board extends State.State {
     terrain?: PIXI.Container;
     statusArea?: PIXI.Container;
 
-    public buildMode? : BuildMode; 
+    public buildMode?: BuildMode;
 
     onLoop(delta: number): boolean {
         return true;
@@ -72,9 +72,9 @@ export class Board extends State.State {
                     (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0);
                 tileSprite.anchor = new PIXI.Point(0.5, 0.5);
                 tileSprite.interactive = true;
-                tileSprite.on("pointertap", () => { 
+                tileSprite.on("pointertap", () => {
                     if (this.tileClickedOn) {
-                        this.tileClickedOn(xy) 
+                        this.tileClickedOn(xy)
                     }
                 });
                 this.terrain!.addChild(tileSprite);
@@ -146,8 +146,9 @@ export class Board extends State.State {
         }
 
         if (stage == "buildingTrack") {
-            let allowedSpaces = getAllowedBuildSpaces(gamestate, this.buildMode!);
-            allowedSpaces.forEach((xy)=>{
+            if (gamestate.buildsRemaining! > 0) {
+                let allowedSpaces = getAllowedBuildSpaces(gamestate, this.buildMode!);
+                allowedSpaces.forEach((xy) => {
                     let sprite = new PIXI.Sprite(Board.canChooseTexture);
                     sprite.anchor = new PIXI.Point(0.5, 0.5);
                     // If more than one, they're circled around centre of point
@@ -156,7 +157,8 @@ export class Board extends State.State {
                     sprite.x = x;
                     sprite.y = y;
                     this.terrain!.addChild(sprite);
-            })
+                })
+            }
         }
     }
 

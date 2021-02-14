@@ -3,6 +3,7 @@ import { Ctx } from 'boardgame.io'
 import { debug } from 'webpack';
 import { Events } from 'boardgame.io/dist/types/src/plugins/events/events';
 import { BuildMode } from '../client/board';
+import { AggregateError } from 'bluebird';
 
 enum CompanyID {
   EB = 0,
@@ -284,6 +285,8 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
   // Get all buildable spaces
   let buildableSpaces: IBuildableSpace[] = [];
 
+  console.log(buildmode.toString());
+
   MAP.forEach((biome) => {
     if (!biome.firstCost) {
       // Can't build
@@ -297,24 +300,47 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
 
       // Check for already containing relevant home/track
       if (buildmode == BuildMode.Normal) {
-        if (homes.find((i) => i.idx == G.toBuild) || tracks.find((i)=>i.owner == G.toBuild)) {
+        if (homes.find((i) => i.idx == G.toBuild) || tracks.find((i) => i.owner == G.toBuild)) {
           return;
         }
       }
-      else
-      {
+      else {
         // IN FUTURE GAME, THIS MIGHT NEED TO CHECK IF HOME STATION IS PRESENT FOR PRIVATE
-        if (tracks.find((i)=>i.narrow)) {
+        if (tracks.find((i) => i.narrow)) {
           return;
         }
       }
 
-      // Only show if tile can support this many cubes
-      if (count == 0) {
-        buildableSpaces.push({ x: i.x, y: i.y, cost: biome.firstCost });
-      } else if (count > 0 && biome.secondCost) {
-        buildableSpaces.push({ x: i.x, y: i.y, cost: biome.secondCost });
+      // Check for adjacency
+      let adjacent = getAdjacent(i);
+      if (buildmode == BuildMode.Normal) {
+        if (!adjacent.find((i) => {
+          let tracks = G.track.filter((t) => (i.x == t.x && i.y == t.y));
+          let homes = G.companies.map((co, idx) => ({ co: co, idx: idx }))
+            .filter((t) => (t.co.home?.x == i.x && t.co.home?.y == i.y));
+          return tracks.find((i) => i.owner == G.toBuild) || homes.find((i) => i.idx == G.toBuild);
+        })) {
+          return;
+        }
       }
+      else {
+        // IN FUTURE GAME, THIS MIGHT NEED TO CHECK IF HOME STATION IS PRESENT FOR PRIVATE
+        if (tracks.find((i) => i.narrow)) {
+          return;
+        }
+      }
+
+      if (count > 0 && !biome.secondCost) {
+        return; // Already full
+      }
+
+      let cost = (count == 0) ? biome.firstCost : biome.secondCost;
+
+      if (cost! > G.companies[G.toBuild!].cash) {
+        return; // Not enough cash
+      }
+
+      buildableSpaces.push({x: i.x, y: i.y, cost: cost!});
     })
   })
 
@@ -456,6 +482,18 @@ const SETUP_POINTS: ICoordinates[] = [
   { x: 9, y: 3 }
 ]
 
+function getAdjacent(xy: ICoordinates): ICoordinates[] {
+  // Get points adjacent to point
+  if ((xy.x % 2) == 0) {
+    // Even x
+    return [{ x: xy.x, y: xy.y - 1 }, { x: xy.x + 1, y: xy.y }, { x: xy.x + 1, y: xy.y + 1 }, { x: xy.x, y: xy.y + 1 }, { x: xy.x - 1, y: xy.y + 1 }, { x: xy.x - 1, y: xy.y }]
+  }
+  else {
+    // Odd x
+    return [{ x: xy.x, y: xy.y - 1 }, { x: xy.x + 1, y: xy.y - 1 }, { x: xy.x + 1, y: xy.y }, { x: xy.x, y: xy.y + 1 }, { x: xy.x - 1, y: xy.y }, { x: xy.x - 1, y: xy.y - 1 }];
+  }
+}
+
 // TODO: Detect when there is a stalemate
 export const EmuBayRailwayCompany = {
   setup: (ctx: Ctx): IEmuBayState => {
@@ -473,11 +511,7 @@ export const EmuBayRailwayCompany = {
     let resourceToAttemptToPlace: ICoordinates[] = [];
     setupCardOrder?.forEach((setupCard, idx) => {
       let O = SETUP_POINTS[idx];
-      let buildPoints = ((SETUP_POINTS[idx].x % 2) == 0) ?
-        // Even x
-        [{ x: O.x, y: O.y }, { x: O.x, y: O.y - 1 }, { x: O.x + 1, y: O.y }, { x: O.x + 1, y: O.y + 1 }, { x: O.x, y: O.y + 1 }, { x: O.x - 1, y: O.y + 1 }, { x: O.x - 1, y: O.y }] :
-        // Odd x
-        [{ x: O.x, y: O.y }, { x: O.x, y: O.y - 1 }, { x: O.x + 1, y: O.y - 1 }, { x: O.x + 1, y: O.y }, { x: O.x, y: O.y + 1 }, { x: O.x - 1, y: O.y }, { x: O.x - 1, y: O.y - 1 }];
+      let buildPoints = [O].concat(getAdjacent(O));
       setupCard.forEach((space, idx) => {
         let buildCoord = buildPoints[idx];
         space.forEach((resource) => {
@@ -684,19 +718,31 @@ export const EmuBayRailwayCompany = {
                 // Must have track remaining
                 if (buildMode == BuildMode.Normal) {
                   if (G.companies[G.toBuild!].trainsRemaining == 0) {
-                    return;
+                    return INVALID_MOVE;
                   }
                 } else {
                   if (G.companies[G.toBuild!].narrowGaugeRemaining == 0) {
-                    return;
+                    return INVALID_MOVE;
                   }
+                }
+
+                // Must have build remaining
+                if (G.buildsRemaining! <= 0) {
+                  return INVALID_MOVE;
                 }
 
                 // Must be in permitted space
                 let allowed = getAllowedBuildSpaces(G, buildMode);
-                if (!allowed.find((i) => i.x == xy.x && i.y == xy.y)) {
-                  return;
+                let thisSpace = allowed.find((i) => i.x == xy.x && i.y == xy.y);
+                if (!thisSpace) {
+                  return INVALID_MOVE;
                 };
+
+                if (G.companies[G.toBuild!].cash < thisSpace.cost)
+                {
+                  return INVALID_MOVE;
+                }
+                G.companies[G.toBuild!].cash -= thisSpace.cost;
 
                 G.track.push({
                   x: xy.x,

@@ -576,18 +576,20 @@ export class Ui {
             trainsP.innerText = `${co.trainsRemaining} track remaining`;
             stageDiv?.append(trainsP);
             if (this.buildMode != BuildMode.Normal) {
-                let switchP = document.createElement("p")
-                switchP.classList.add("chooseableaction");
-                switchP.innerText = "Switch to normal track"
-                switchP.onclick = (ev) => {
-                    board.buildMode = BuildMode.Normal;
-                    this.buildMode = BuildMode.Normal;
-                    // Refresh panel
-                    let parent = stageDiv.parentNode;
-                    parent?.removeChild(stageDiv);
-                    parent?.appendChild(this.buildTrackStage(gamestate, ctx, client, board));
+                if (gamestate.buildsRemaining! > 0) {
+                    let switchP = document.createElement("p")
+                    switchP.classList.add("chooseableaction");
+                    switchP.innerText = "Switch to normal track"
+                    switchP.onclick = (ev) => {
+                        board.buildMode = BuildMode.Normal;
+                        this.buildMode = BuildMode.Normal;
+                        // Refresh panel
+                        let parent = stageDiv.parentNode;
+                        parent?.removeChild(stageDiv);
+                        parent?.appendChild(this.buildTrackStage(gamestate, ctx, client, board));
+                    }
+                    stageDiv?.append(switchP);
                 }
-                stageDiv?.append(switchP);
             }
         }
 
@@ -601,18 +603,20 @@ export class Ui {
             stageDiv?.append(narrowP);
 
             if (this.buildMode != BuildMode.Narrow) {
-                let switchP = document.createElement("p")
-                switchP.classList.add("chooseableaction");
-                switchP.innerText = "Switch to narrow gauge track"
-                switchP.onclick = (ev) => {
-                    board.buildMode = BuildMode.Narrow;
-                    this.buildMode = BuildMode.Narrow;
-                    // Refresh panel
-                    let parent = stageDiv.parentNode;
-                    parent?.removeChild(stageDiv);
-                    parent?.appendChild(this.buildTrackStage(gamestate, ctx, client, board));
+                if (gamestate.buildsRemaining! > 0) {
+                    let switchP = document.createElement("p")
+                    switchP.classList.add("chooseableaction");
+                    switchP.innerText = "Switch to narrow gauge track"
+                    switchP.onclick = (ev) => {
+                        board.buildMode = BuildMode.Narrow;
+                        this.buildMode = BuildMode.Narrow;
+                        // Refresh panel
+                        let parent = stageDiv.parentNode;
+                        parent?.removeChild(stageDiv);
+                        parent?.appendChild(this.buildTrackStage(gamestate, ctx, client, board));
+                    }
+                    stageDiv?.append(switchP);
                 }
-                stageDiv?.append(switchP);
             }
         }
 

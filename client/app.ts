@@ -22,8 +22,9 @@ class EmuBayRailwayCompanyClient {
         let mapState: Board = new Board(this.pixiApp, resources);
         let theUi = new Ui()
         mapState.start();
-        this.client.subscribe((state: State) => mapState.drawMap(state.G as IEmuBayState, state.ctx));
+        // Subscribe in this order, as UI may change things the board needs
         this.client.subscribe((state: State) => theUi.update(state.G as IEmuBayState, state.ctx, this.client, mapState));
+        this.client.subscribe((state: State) => mapState.drawMap(state.G as IEmuBayState, state.ctx));
     }
 }
 
