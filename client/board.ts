@@ -157,6 +157,12 @@ export class Board extends State.State {
                     sprite.x = x;
                     sprite.y = y;
                     this.terrain!.addChild(sprite);
+
+                    let priceSprice = new PIXI.Text(`₤${(xy).cost}`)
+                    priceSprice.x = x;
+                    priceSprice.y = sprite.y + (Board.TILE_HEIGHT / 2) - (Board.TILE_HEIGHT / 5);
+                    priceSprice.anchor = new PIXI.Point(0.5, 0.5);
+                    this.terrain!.addChild(priceSprice);
                 })
             }
         }
