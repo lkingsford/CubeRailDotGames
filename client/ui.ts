@@ -131,6 +131,19 @@ export class Ui {
                 actionsDiv?.appendChild(actionDiv);
             });
 
+            {
+                let undoDiv = document.createElement("div");
+                undoDiv.innerText = "Undo";
+                undoDiv.classList.add("actionbox");
+                if (ctx?.numMoves ?? 0 > 0) {
+                    undoDiv.classList.add("chooseableaction");
+                    undoDiv.onclick = (ev) => {
+                        client.undo()
+                    };
+                }
+                actionsDiv?.appendChild(undoDiv);
+            }
+
             let phase = ctx.phase;
             if (phase == "auction" || phase == "initialAuction") {
                 let auctionH1 = document.createElement("h1");
