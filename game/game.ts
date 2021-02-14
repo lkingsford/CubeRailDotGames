@@ -4,6 +4,7 @@ import { debug } from 'webpack';
 import { Events } from 'boardgame.io/dist/types/src/plugins/events/events';
 import { BuildMode } from '../client/board';
 import { AggregateError } from 'bluebird';
+import { gameEvent } from 'boardgame.io/dist/types/src/core/action-creators';
 
 enum CompanyID {
   EB = 0,
@@ -286,8 +287,6 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
   // Get all buildable spaces
   let buildableSpaces: IBuildableSpace[] = [];
 
-  console.log(buildmode.toString());
-
   MAP.forEach((biome) => {
     if (!biome.firstCost) {
       // Can't build
@@ -312,6 +311,19 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
         }
       }
 
+      if (count > 0 && !biome.secondCost) {
+        return; // Already full
+      }
+
+      let cost = (count == 0) ? biome.firstCost : biome.secondCost;
+
+      if (cost! > G.companies[G.toBuild!].cash) {
+        return; // Not enough cash
+      }
+
+      if (buildmode == BuildMode.Normal && G.companies[G.toBuild!].trainsRemaining == 0) { return }
+      if (buildmode == BuildMode.Narrow && G.companies[G.toBuild!].narrowGaugeRemaining == 0) { return }
+
       // Check for adjacency
       if (buildmode == BuildMode.Normal) {
         let adjacent = getAdjacent(i);
@@ -321,6 +333,7 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
             .filter((t) => (t.co.home?.x == i.x && t.co.home?.y == i.y));
           return tracks.find((i) => i.owner == G.toBuild) || homes.find((i) => i.idx == G.toBuild);
         })) {
+          //  None are adjacent, return
           return;
         }
       }
@@ -334,18 +347,38 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
           // Must have merged in. Need connection to one of its privates
           relevantHomes = G.companies[G.toBuild!].independentHomesOwned!;
         }
-        return;
+
+        // This should be cached - a fair bit of repetition happening here.
+        let visited: ICoordinates[] = []
+        let toCheck = getAdjacent((i));
+        let connected = false;
+
+        while (!connected && toCheck.length > 0) {
+          let checking = toCheck.pop()!;
+          if (visited.find((i) => i.x == checking.x && i.y == checking.y)) {
+            // already visited
+            return
+          }
+
+          if (relevantHomes.find((i) => i.x == checking.x && i.y == checking.y)) {
+            connected = true;
+            break;
+          }
+
+          let hasTrack = G.track.find((i) => i.x == checking.x && i.y == checking.y && i.narrow);
+          if (!hasTrack) {
+            // No track - can't help connect (but could be available)
+            continue;
+          }
+
+          toCheck.push(...getAdjacent(checking));
+        }
+
+        if (!connected) {
+          return;
+        }
       }
 
-      if (count > 0 && !biome.secondCost) {
-        return; // Already full
-      }
-
-      let cost = (count == 0) ? biome.firstCost : biome.secondCost;
-
-      if (cost! > G.companies[G.toBuild!].cash) {
-        return; // Not enough cash
-      }
 
       buildableSpaces.push({ x: i.x, y: i.y, cost: cost! });
     })
