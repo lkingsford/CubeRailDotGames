@@ -2,6 +2,7 @@ import { INVALID_MOVE } from 'boardgame.io/core'
 import { Ctx } from 'boardgame.io'
 import { debug } from 'webpack';
 import { Events } from 'boardgame.io/dist/types/src/plugins/events/events';
+import { BuildMode } from '../client/board';
 
 enum CompanyID {
   EB = 0,
@@ -275,6 +276,51 @@ function jiggleCubes(G: IEmuBayState, actionToTake: actions): string | void {
   G.actionCubeLocations[availableSpaces[0].idx] = true
 }
 
+export interface IBuildableSpace extends ICoordinates {
+  cost: number;
+}
+
+export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IBuildableSpace[] {
+  // Get all buildable spaces
+  let buildableSpaces: IBuildableSpace[] = [];
+
+  MAP.forEach((biome) => {
+    if (!biome.firstCost) {
+      // Can't build
+      return
+    }
+    biome.locations.forEach((i) => {
+      let tracks = G.track.filter((t) => (i.x == t.x && i.y == t.y));
+      let homes = G.companies.map((co, idx) => ({ co: co, idx: idx }))
+        .filter((t) => (t.co.home?.x == i.x && t.co.home?.y == i.y));
+      let count = tracks.length + homes.length;
+
+      // Check for already containing relevant home/track
+      if (buildmode == BuildMode.Normal) {
+        if (homes.find((i) => i.idx == G.toBuild) || tracks.find((i)=>i.owner == G.toBuild)) {
+          return;
+        }
+      }
+      else
+      {
+        // IN FUTURE GAME, THIS MIGHT NEED TO CHECK IF HOME STATION IS PRESENT FOR PRIVATE
+        if (tracks.find((i)=>i.narrow)) {
+          return;
+        }
+      }
+
+      // Only show if tile can support this many cubes
+      if (count == 0) {
+        buildableSpaces.push({ x: i.x, y: i.y, cost: biome.firstCost });
+      } else if (count > 0 && biome.secondCost) {
+        buildableSpaces.push({ x: i.x, y: i.y, cost: biome.secondCost });
+      }
+    })
+  })
+
+  return buildableSpaces;
+}
+
 export const InitialAuctionOrder = [CompanyID.LW, CompanyID.TMLC, CompanyID.EB, CompanyID.GT]
 export const IndependentOrder = [CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF];
 
@@ -380,34 +426,34 @@ const INITIAL_AVAILABLE_BONDS: IBond[] = [
 
 // Bonds that are randomly given to the 3 companies
 const STARTING_BONDS: IBond[] = [
-  { deferred: true, amount: 0, baseInterest: 0, interestDelta: 0},
-  { deferred: true, amount: 10, baseInterest: 5, interestDelta: 1},
-  { deferred: true, amount: 15, baseInterest: 5, interestDelta: 2},
+  { deferred: true, amount: 0, baseInterest: 0, interestDelta: 0 },
+  { deferred: true, amount: 10, baseInterest: 5, interestDelta: 1 },
+  { deferred: true, amount: 15, baseInterest: 5, interestDelta: 2 },
 ]
 
 const SETUP_CARDS = [
   // C N NE SE S SW NW
   // Cube = 1
   // Station = 2
-  [[1,2], [1,1],[],[1],[],[],[]],
-  [[2],[1],[1],[],[],[],[]],
-  [[2],[],[1,1],[],[],[1],[]],
-  [[1,1,1,2],[],[],[],[],[],[]],
-  [[1],[],[],[],[],[1],[]],
-  [[1],[1],[],[],[],[],[1]],
-  [[1],[1],[],[],[],[],[]],
-  [[],[],[1],[],[1],[],[]]
+  [[1, 2], [1, 1], [], [1], [], [], []],
+  [[2], [1], [1], [], [], [], []],
+  [[2], [], [1, 1], [], [], [1], []],
+  [[1, 1, 1, 2], [], [], [], [], [], []],
+  [[1], [], [], [], [], [1], []],
+  [[1], [1], [], [], [], [], [1]],
+  [[1], [1], [], [], [], [], []],
+  [[], [], [1], [], [1], [], []]
 ]
 
-const SETUP_POINTS : ICoordinates[] = [
-  {x: 2, y: 2},
-  {x: 3, y: 4},
-  {x: 3, y: 5},
-  {x: 4, y: 4},
-  {x: 4, y: 6},
-  {x: 5, y: 8},
-  {x: 9, y: 1},
-  {x: 9, y: 3}
+const SETUP_POINTS: ICoordinates[] = [
+  { x: 2, y: 2 },
+  { x: 3, y: 4 },
+  { x: 3, y: 5 },
+  { x: 4, y: 4 },
+  { x: 4, y: 6 },
+  { x: 5, y: 8 },
+  { x: 9, y: 1 },
+  { x: 9, y: 3 }
 ]
 
 // TODO: Detect when there is a stalemate
@@ -415,23 +461,23 @@ export const EmuBayRailwayCompany = {
   setup: (ctx: Ctx): IEmuBayState => {
     let companies = Array.from(CompanyInitialState);
     let bondOrder = ctx.random?.Shuffle(STARTING_BONDS);
-    bondOrder?.forEach((i, idx)=>{
+    bondOrder?.forEach((i, idx) => {
       companies[idx].bonds.push(i);
       companies[idx].cash = i.amount;
     });
-    
+
     // Setting up resource cubes and homes
     let homeOrder = ctx.random?.Shuffle([CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF])!;
     let setupCardOrder = ctx.random?.Shuffle(SETUP_CARDS);
     let resourceCubes: ICoordinates[] = [];
     let resourceToAttemptToPlace: ICoordinates[] = [];
     setupCardOrder?.forEach((setupCard, idx) => {
-        let O = SETUP_POINTS[idx];
-        let buildPoints = ((SETUP_POINTS[idx].x % 2) == 0) ?
-          // Even x
-          [{x: O.x, y: O.y}, {x: O.x, y: O.y - 1}, {x: O.x + 1, y: O.y}, {x: O.x + 1, y: O.y + 1 }, {x: O.x, y: O.y + 1}, {x: O.x - 1, y: O.y + 1}, {x: O.x - 1, y: O.y}] :
-          // Odd x
-          [{x: O.x, y: O.y}, {x: O.x, y: O.y - 1}, {x: O.x + 1, y: O.y - 1}, {x: O.x + 1, y: O.y}, {x: O.x, y: O.y + 1}, {x: O.x - 1, y: O.y}, {x: O.x - 1, y: O.y - 1}];
+      let O = SETUP_POINTS[idx];
+      let buildPoints = ((SETUP_POINTS[idx].x % 2) == 0) ?
+        // Even x
+        [{ x: O.x, y: O.y }, { x: O.x, y: O.y - 1 }, { x: O.x + 1, y: O.y }, { x: O.x + 1, y: O.y + 1 }, { x: O.x, y: O.y + 1 }, { x: O.x - 1, y: O.y + 1 }, { x: O.x - 1, y: O.y }] :
+        // Odd x
+        [{ x: O.x, y: O.y }, { x: O.x, y: O.y - 1 }, { x: O.x + 1, y: O.y - 1 }, { x: O.x + 1, y: O.y }, { x: O.x, y: O.y + 1 }, { x: O.x - 1, y: O.y }, { x: O.x - 1, y: O.y - 1 }];
       setupCard.forEach((space, idx) => {
         let buildCoord = buildPoints[idx];
         space.forEach((resource) => {
@@ -447,12 +493,12 @@ export const EmuBayRailwayCompany = {
         });
       });
     });
-    MAP.forEach((terrain)=>{
+    MAP.forEach((terrain) => {
       if (!terrain.canPlaceResource) {
         return;
       }
-      terrain.locations.forEach((xy)=>{
-        let toPlace = resourceToAttemptToPlace.filter((i)=> i.x==xy.x && i.y == xy.y).length;
+      terrain.locations.forEach((xy) => {
+        let toPlace = resourceToAttemptToPlace.filter((i) => i.x == xy.x && i.y == xy.y).length;
         for (let i = 0; i < toPlace; ++i) {
           resourceCubes.push(xy);
         }
@@ -556,7 +602,7 @@ export const EmuBayRailwayCompany = {
                   ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
                     .filter(v => v.value == action)
                     .filter(v => G.actionCubeLocations[v.idx] == true);
-                  let filledSpaceCount = filledSpaces.length;
+                let filledSpaceCount = filledSpaces.length;
                 if (filledSpaceCount == 0) {
                   console.log("No cube to remove")
                   return INVALID_MOVE;
@@ -634,8 +680,40 @@ export const EmuBayRailwayCompany = {
           },
           buildingTrack: {
             moves: {
-              buildTrack: (G: IEmuBayState, ctx: Ctx, x: number, y: number, narrowGauge: boolean) => {
+              buildTrack: (G: IEmuBayState, ctx: Ctx, xy: ICoordinates, buildMode: BuildMode) => {
+                // Must have track remaining
+                if (buildMode == BuildMode.Normal) {
+                  if (G.companies[G.toBuild!].trainsRemaining == 0) {
+                    return;
+                  }
+                } else {
+                  if (G.companies[G.toBuild!].narrowGaugeRemaining == 0) {
+                    return;
+                  }
+                }
+
+                // Must be in permitted space
+                let allowed = getAllowedBuildSpaces(G, buildMode);
+                if (!allowed.find((i) => i.x == xy.x && i.y == xy.y)) {
+                  return;
+                };
+
+                G.track.push({
+                  x: xy.x,
+                  y: xy.y,
+                  narrow: buildMode == BuildMode.Narrow,
+                  owner: buildMode == BuildMode.Normal ? G.toBuild! : undefined
+                });
+                if (buildMode == BuildMode.Normal) {
+                  G.companies[G.toBuild!].trainsRemaining -= 1;
+                }
+                else {
+                  G.companies[G.toBuild!].narrowGaugeRemaining -= 1;
+                }
+                G.anyActionsTaken = true;
+                G.buildsRemaining! -= 1;
               },
+
               doneBuilding: (G: IEmuBayState, ctx: Ctx) => {
                 if (!G.anyActionsTaken) {
                   console.log("No track built - can't pass");

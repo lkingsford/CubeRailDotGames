@@ -1,6 +1,6 @@
 import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
-import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond } from "../game/game";
+import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond, ICoordinates } from "../game/game";
 import { BuildMode, Board } from "../client/board";
 
 const muuri = require("muuri/dist/muuri")
@@ -15,6 +15,9 @@ const ACTIONS = ["Build track", "Auction Share", "Take Resource", "Issue Bond", 
 export class Ui {
     private buildMode: BuildMode = BuildMode.Normal;
     public update(gamestate: IEmuBayState, ctx: Ctx, client: any, board: Board): void {
+        // Reset this on update, will set correctly during update
+        board.tileClickedOn = undefined;
+
         // Action selector
         {
             let outerDiv = document.querySelector(`#actions`);
@@ -148,6 +151,9 @@ export class Ui {
             }
 
             if (stage == "buildingTrack") {
+                board.tileClickedOn = (xy) => {
+                    client.moves.buildTrack(xy, this.buildMode);
+                }
                 contentDiv?.append(this.buildTrackStage(gamestate, ctx, client, board));
             }
 
@@ -623,10 +629,12 @@ export class Ui {
             passP.innerText = "Must build at least one track";
             stageDiv?.append(passP);
         }
+        let noteP = document.createElement("p");
+        noteP.innerText = "Click on map on highlighted spaces to build";
+        stageDiv?.append(noteP);
 
         board.buildMode = this.buildMode;
 
         return stageDiv;
     };
-
 }

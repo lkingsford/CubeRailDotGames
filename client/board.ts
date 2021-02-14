@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js'
 import * as State from './state'
-import { IEmuBayState, MAP, ICoordinates } from '../game/game'
+import { IEmuBayState, MAP, ICoordinates, getAllowedBuildSpaces } from '../game/game'
 
 import { Ctx } from 'boardgame.io';
 
@@ -71,6 +71,12 @@ export class Board extends State.State {
                 tileSprite.y = Board.TILE_HEIGHT * xy.y + Board.OFFSET_Y +
                     (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0);
                 tileSprite.anchor = new PIXI.Point(0.5, 0.5);
+                tileSprite.interactive = true;
+                tileSprite.on("pointertap", () => { 
+                    if (this.tileClickedOn) {
+                        this.tileClickedOn(xy) 
+                    }
+                });
                 this.terrain!.addChild(tileSprite);
             });
         });
@@ -103,6 +109,15 @@ export class Board extends State.State {
             CubeLocations[`${xy.x},${xy.y}`] = location;
         })
 
+        gamestate.track.forEach((xy) => {
+            let location = CubeLocations[`${xy.x},${xy.y}`];
+            if (!location) {
+                location = [];
+            }
+            location.push(Board.cubeTextures[xy.narrow ? CubeTexture.Narrow : xy.owner!]);
+            CubeLocations[`${xy.x},${xy.y}`] = location;
+        })
+
         MAP.forEach((terrain) => {
             terrain.locations.forEach(xy => {
                 let cubesToPlace = CubeLocations[`${xy.x},${xy.y}`];
@@ -124,7 +139,28 @@ export class Board extends State.State {
                 });
             });
         })
+
+        let stage = "nostage";
+        if (ctx.activePlayers) {
+            stage = ctx.activePlayers![+ctx.currentPlayer];
+        }
+
+        if (stage == "buildingTrack") {
+            let allowedSpaces = getAllowedBuildSpaces(gamestate, this.buildMode!);
+            allowedSpaces.forEach((xy)=>{
+                    let sprite = new PIXI.Sprite(Board.canChooseTexture);
+                    sprite.anchor = new PIXI.Point(0.5, 0.5);
+                    // If more than one, they're circled around centre of point
+                    let x = Board.TILE_WIDTH * xy.x + Board.OFFSET_X;
+                    let y = Board.TILE_HEIGHT * xy.y + Board.OFFSET_Y + (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0);
+                    sprite.x = x;
+                    sprite.y = y;
+                    this.terrain!.addChild(sprite);
+            })
+        }
     }
+
+    public tileClickedOn?: (xy: ICoordinates) => void;
 
     public static addResources(loader: PIXI.Loader): void {
         loader.add("map_tiles", "assets/MapTiles.png");
@@ -145,6 +181,7 @@ export class Board extends State.State {
     private static CUBE_TILE_WIDTH = 128;
     private static CUBE_TILE_HEIGHT = 128;
     private static CUBE_TILE_Y = 512;
+
 
     static getTextures(resources: { [index: string]: PIXI.LoaderResource }) {
         Board.tileTextures = {};
