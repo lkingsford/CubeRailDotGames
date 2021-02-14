@@ -281,6 +281,7 @@ function jiggleCubes(G: IEmuBayState, actionToTake: actions): string | void {
 
 export interface IBuildableSpace extends ICoordinates {
   cost: number;
+  rev: number;
 }
 
 export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IBuildableSpace[] {
@@ -379,8 +380,15 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
         }
       }
 
+      let revenue: number = 0;
+      
+      if (biome.revenue.length == 1) { revenue = biome.revenue[0]; }
 
-      buildableSpaces.push({ x: i.x, y: i.y, cost: cost! });
+      if (biome.revenue.length > 1) {
+        //  
+      }
+
+      buildableSpaces.push({ x: i.x, y: i.y, cost: cost!, rev: revenue!});
     })
   })
 
@@ -808,6 +816,8 @@ export const EmuBayRailwayCompany = {
                 }
                 G.anyActionsTaken = true;
                 G.buildsRemaining! -= 1;
+                
+                //TODO: Revenue
               },
 
               doneBuilding: (G: IEmuBayState, ctx: Ctx) => {
