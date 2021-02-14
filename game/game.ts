@@ -550,7 +550,7 @@ export const EmuBayRailwayCompany = {
       companies[idx].bonds.push(i);
       companies[idx].cash = i.amount;
     });
-
+    let track: ITrackBuilt[] = [];
     // Setting up resource cubes and homes
     let homeOrder = ctx.random?.Shuffle([CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF])!;
     let setupCardOrder = ctx.random?.Shuffle(SETUP_CARDS);
@@ -570,10 +570,14 @@ export const EmuBayRailwayCompany = {
           if (resource == 2) {
             let co = homeOrder?.pop()!;
             companies[co].home = buildCoord;
+
+            // Build track so other bases are passthroughable
+            track.push ({x: buildCoord.x, y: buildCoord.y, narrow: true});
           };
         });
       });
     });
+
     MAP.forEach((terrain) => {
       if (!terrain.canPlaceResource) {
         return;
@@ -594,7 +598,7 @@ export const EmuBayRailwayCompany = {
       // Starting with take resources spaces filled and pay dividends filled
       actionCubeLocations: [false, false, false, false, false, true, true, true, false, false, true],
       resourceCubes: resourceCubes,
-      track: [],
+      track: track,
       bonds: Array.from(INITIAL_AVAILABLE_BONDS),
     }
   },
