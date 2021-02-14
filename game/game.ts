@@ -62,8 +62,10 @@ export interface IEmuBayState {
   playerInitialBidder?: number;
   auctionFinished?: boolean;
   anyActionsTaken?: boolean;
+  buildsRemaining?: number;
   independentAvailable?: CompanyID | null;
   bonds: IBond[];
+  toBuild?: CompanyID;
 };
 
 export interface ILocation extends ICoordinates {
@@ -575,6 +577,9 @@ export const EmuBayRailwayCompany = {
                 if (jiggleCubes(G, actions.BuildTrack) == INVALID_MOVE) {
                   return INVALID_MOVE;
                 };
+                G.toBuild = company;
+                G.buildsRemaining = 3;
+                G.anyActionsTaken = false;
                 ctx.events?.setStage!("buildingTrack");
               },
               mineResource: (G: IEmuBayState, ctx: Ctx, company: number) => {

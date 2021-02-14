@@ -6,6 +6,8 @@ import { Ctx } from 'boardgame.io';
 
 
 enum CubeTexture { EB, TMLC, LW, Narrow, Resource };
+export enum BuildMode { Normal, Narrow };
+
 export class Board extends State.State {
     constructor(app: PIXI.Application,
         resources: { [index: string]: PIXI.LoaderResource }) {
@@ -34,6 +36,8 @@ export class Board extends State.State {
     playfield?: PIXI.Container;
     terrain?: PIXI.Container;
     statusArea?: PIXI.Container;
+
+    public buildMode? : BuildMode; 
 
     onLoop(delta: number): boolean {
         return true;
@@ -88,7 +92,7 @@ export class Board extends State.State {
         })
 
         // Draw rails and cubes together
-        let CubeLocations: { [index: string ]: PIXI.Texture[] } = {};
+        let CubeLocations: { [index: string]: PIXI.Texture[] } = {};
 
         gamestate.resourceCubes.forEach((xy) => {
             let location = CubeLocations[`${xy.x},${xy.y}`];
@@ -113,7 +117,7 @@ export class Board extends State.State {
                     let angle = (i * 2 * Math.PI) / cubesToPlace.length;
                     let x = Board.TILE_WIDTH * xy.x + Board.OFFSET_X + Math.sin(angle) * this.cube_place_radius;
                     let y = Board.TILE_HEIGHT * xy.y + Board.OFFSET_Y + (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0)
-                           + Math.cos(angle) * this.cube_place_radius;
+                        + Math.cos(angle) * this.cube_place_radius;
                     sprite.x = x;
                     sprite.y = y;
                     this.terrain!.addChild(sprite);
@@ -128,8 +132,8 @@ export class Board extends State.State {
 
     public static tileTextures: { [index: number]: PIXI.Texture };
     public static companyTextures: { [index: number]: PIXI.Texture };
-
-    public static cubeTextures: { [index: number] : PIXI.Texture };
+    public static canChooseTexture: PIXI.Texture;
+    public static cubeTextures: { [index: number]: PIXI.Texture };
 
     private static TEXTURE_TILE_WIDTH = 256;
     private static TEXTURE_TILE_HEIGHT = 256;
@@ -152,6 +156,14 @@ export class Board extends State.State {
                 Board.tileTextures[ix + iy * 3] = new PIXI.Texture(resources["map_tiles"].texture.baseTexture as PIXI.BaseTexture,
                     new PIXI.Rectangle(srcX, srcY, Board.TEXTURE_TILE_WIDTH, Board.TEXTURE_TILE_HEIGHT));
             }
+        }
+
+        {
+            let srcX = 3 * Board.TEXTURE_TILE_WIDTH;
+            let srcY = 0;
+
+            Board.canChooseTexture = new PIXI.Texture(resources["map_tiles"].texture.baseTexture as PIXI.BaseTexture,
+                new PIXI.Rectangle(srcX, srcY, Board.TEXTURE_TILE_WIDTH, Board.TEXTURE_TILE_HEIGHT));
         }
 
         Board.companyTextures = {};

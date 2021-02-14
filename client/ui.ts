@@ -1,6 +1,7 @@
 import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
 import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond } from "../game/game";
+import { BuildMode, Board } from "../client/board";
 
 const muuri = require("muuri/dist/muuri")
 var grid = new muuri("#maingrid", { dragEnabled: true, layout: {} });
@@ -12,7 +13,8 @@ const COMPANY_NAME = ["Emu Bay Railway Co.", "Tasmanian Main Line Railroad",
 const ACTIONS = ["Build track", "Auction Share", "Take Resource", "Issue Bond", "Merge Private", "Pay Dividend"];
 
 export class Ui {
-    public update(gamestate: IEmuBayState, ctx: Ctx, client: any): void {
+    private buildMode: BuildMode = BuildMode.Normal;
+    public update(gamestate: IEmuBayState, ctx: Ctx, client: any, board: Board): void {
         // Action selector
         {
             let outerDiv = document.querySelector(`#actions`);
@@ -99,6 +101,7 @@ export class Ui {
                                 break;
                             case actions.BuildTrack:
                                 this.clearActionExtras();
+                                contentDiv?.appendChild(this.buildTrackExtra(gamestate, ctx, client));
                                 break;
                             case actions.IssueBond:
                                 this.clearActionExtras();
@@ -142,6 +145,10 @@ export class Ui {
                     };
                 }
                 actionsDiv?.appendChild(undoDiv);
+            }
+
+            if (stage == "buildingTrack") {
+                contentDiv?.append(this.buildTrackStage(gamestate, ctx, client, board));
             }
 
             let phase = ctx.phase;
@@ -329,6 +336,18 @@ export class Ui {
                     contentDiv?.append(bondP);
                 })
             }
+
+            if (co.trainsRemaining > 0) {
+                let trainsP = document.createElement("p")
+                trainsP.innerText = `${co.trainsRemaining} track remaining`;
+                contentDiv?.append(trainsP);
+            }
+
+            if (co.narrowGaugeRemaining > 0) {
+                let narrowP = document.createElement("p")
+                narrowP.innerText = `${co.narrowGaugeRemaining} narrow gauge track remaining`;
+                contentDiv?.append(narrowP);
+            }
         });
 
         // Bonds
@@ -491,4 +510,123 @@ export class Ui {
             return `₤${bond.amount!} (₤${bond.baseInterest}Δ₤${bond.interestDelta}/div)`;
         }
     }
+
+    private buildTrackExtra(gamestate: IEmuBayState, ctx: Ctx, client: any): HTMLElement {
+        let buildTrackExtraDiv = document.createElement("div");
+        buildTrackExtraDiv.classList.add("actionextra");
+
+        let available = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
+            .filter((c) => {
+                if (c.value.trainsRemaining == 0 && c.value.narrowGaugeRemaining == 0) { return false };
+                if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length > 0) { return true };
+                return false;
+            })
+        let dirH1 = document.createElement("h1");
+        dirH1.innerText = "Pick a company to issue";
+        buildTrackExtraDiv.appendChild(dirH1);
+        available.forEach((i) => {
+            let coP = document.createElement("p");
+            coP.classList.add(COMPANY_ABBREV[i.idx]);
+            coP.classList.add("chooseableaction");
+            coP.classList.add("coToChoose")
+            coP.innerText = COMPANY_NAME[i.idx];
+            coP.dataset.co = i.idx.toString();
+            coP.onclick = (cop_ev) => {
+                let element = (cop_ev.currentTarget as HTMLElement)
+                let co = +element!.dataset!.co!;
+                if (gamestate.companies[co].trainsRemaining > 0) {
+                    this.buildMode = BuildMode.Normal;
+                } else {
+                    this.buildMode = BuildMode.Narrow;
+                }
+                client.moves.buildTrack(+(cop_ev.currentTarget as HTMLElement)!.dataset!.co!);
+            }
+            buildTrackExtraDiv.appendChild(coP);
+        })
+        return buildTrackExtraDiv;
+    }
+
+    private buildTrackStage(gamestate: IEmuBayState, ctx: Ctx, client: any, board: Board): HTMLElement {
+        let stageDiv = document.createElement("div");
+        let title = document.createElement("h1");
+        title.innerText = `Building Track (${COMPANY_NAME[gamestate.toBuild!]})`;
+        title.classList.add(COMPANY_ABBREV[gamestate.toBuild!]);
+        stageDiv.append(title);
+
+        let co = gamestate.companies[gamestate.toBuild!]!;
+
+        {
+            let cashP = document.createElement("p")
+            cashP.innerText = `₤${co.cash} - ${gamestate.buildsRemaining} builds remaining`;
+            stageDiv?.append(cashP);
+        }
+
+        if (co.trainsRemaining > 0) {
+            let trainsH = document.createElement("h3");
+            trainsH.innerText = "Normal track" + (this.buildMode == BuildMode.Normal ? " (building)" : "");
+            stageDiv?.appendChild(trainsH);
+
+            let trainsP = document.createElement("p")
+            trainsP.innerText = `${co.trainsRemaining} track remaining`;
+            stageDiv?.append(trainsP);
+            if (this.buildMode != BuildMode.Normal) {
+                let switchP = document.createElement("p")
+                switchP.classList.add("chooseableaction");
+                switchP.innerText = "Switch to normal track"
+                switchP.onclick = (ev) => {
+                    board.buildMode = BuildMode.Normal;
+                    this.buildMode = BuildMode.Normal;
+                    // Refresh panel
+                    let parent = stageDiv.parentNode;
+                    parent?.removeChild(stageDiv);
+                    parent?.appendChild(this.buildTrackStage(gamestate, ctx, client, board));
+                }
+                stageDiv?.append(switchP);
+            }
+        }
+
+        if (co.narrowGaugeRemaining > 0) {
+            let trainsH = document.createElement("h3");
+            trainsH.innerText = "Narrow gauge track" + (this.buildMode == BuildMode.Narrow ? " (building)" : "");
+            stageDiv?.appendChild(trainsH);
+
+            let narrowP = document.createElement("p")
+            narrowP.innerText = `${co.narrowGaugeRemaining} narrow gauge track remaining`;
+            stageDiv?.append(narrowP);
+
+            if (this.buildMode != BuildMode.Narrow) {
+                let switchP = document.createElement("p")
+                switchP.classList.add("chooseableaction");
+                switchP.innerText = "Switch to narrow gauge track"
+                switchP.onclick = (ev) => {
+                    board.buildMode = BuildMode.Narrow;
+                    this.buildMode = BuildMode.Narrow;
+                    // Refresh panel
+                    let parent = stageDiv.parentNode;
+                    parent?.removeChild(stageDiv);
+                    parent?.appendChild(this.buildTrackStage(gamestate, ctx, client, board));
+                }
+                stageDiv?.append(switchP);
+            }
+        }
+
+        if (gamestate.anyActionsTaken) {
+            let passP = document.createElement("p");
+            passP.classList.add("chooseableaction");
+            passP.innerText = "Finish building";
+            passP.onclick = (ev) => {
+                client.moves.doneBuilding();
+            }
+            stageDiv?.append(passP);
+        } else {
+            let passP = document.createElement("p");
+            passP.innerText = "Must build at least one track";
+            stageDiv?.append(passP);
+        }
+
+        board.buildMode = this.buildMode;
+
+        return stageDiv;
+    };
+
 }
