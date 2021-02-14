@@ -1,9 +1,10 @@
 import { INVALID_MOVE } from 'boardgame.io/core'
 import { Ctx } from 'boardgame.io'
-import { debug } from 'webpack';
+import { debug, NormalModuleReplacementPlugin } from 'webpack';
 import { Events } from 'boardgame.io/dist/types/src/plugins/events/events';
 import { BuildMode } from '../client/board';
 import { gameEvent } from 'boardgame.io/dist/types/src/core/action-creators';
+import { map } from 'bluebird';
 
 enum CompanyID {
   EB = 0,
@@ -88,6 +89,12 @@ interface ITerrain {
 
 const fixedNarrowRevenue = 3;
 
+function getTileBiome(tile: ICoordinates): ITerrain | undefined {
+  return MAP.find((T) => {
+    return T.locations.find((xy) => xy.x == tile.x && xy.y == tile.y) != undefined;
+  })
+}
+
 // This should be generatable, or compatible with 18xxMaker or something
 export const MAP: ITerrain[] = [
   {
@@ -97,8 +104,11 @@ export const MAP: ITerrain[] = [
     secondCost: 8,
     revenue: (G: IEmuBayState, B: BuildMode) => {
       if (B == BuildMode.Normal) {
-        return 2;
-        // TODO: Check if town present
+        // Is town present?
+        let owned = G.track.filter((i) => i.owner == G.toBuild)
+        let biomes = owned.map((i) => getTileBiome(i))
+        let anyTowns = biomes.find((i) => i?.biomeName == "Town") != undefined;
+        return anyTowns ? 2 : 0;
       } else {
         return fixedNarrowRevenue;
       }
@@ -599,12 +609,14 @@ export const EmuBayRailwayCompany = {
           if (resource == 2) {
             let co = homeOrder?.pop()!;
             companies[co].home = buildCoord;
-
-            // Build track so other bases are passthroughable
-            track.push({ x: buildCoord.x, y: buildCoord.y, narrow: true });
           };
         });
       });
+    });
+
+    // Build track for each home station
+    companies.forEach((co, idx) => {
+        track.push({ x: co.home!.x, y: co.home!.y, narrow: idx > 2, owner: idx <= 2 ? idx : undefined });
     });
 
     MAP.forEach((terrain) => {
