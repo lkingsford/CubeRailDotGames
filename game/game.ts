@@ -47,6 +47,7 @@ interface ICompany {
   sharesRemaining: number;
   reservedSharesRemaining: number;
   home?: ICoordinates;
+  independentHomesOwned: ICoordinates[];
 }
 
 export interface IEmuBayState {
@@ -312,8 +313,8 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
       }
 
       // Check for adjacency
-      let adjacent = getAdjacent(i);
       if (buildmode == BuildMode.Normal) {
+        let adjacent = getAdjacent(i);
         if (!adjacent.find((i) => {
           let tracks = G.track.filter((t) => (i.x == t.x && i.y == t.y));
           let homes = G.companies.map((co, idx) => ({ co: co, idx: idx }))
@@ -324,10 +325,16 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
         }
       }
       else {
-        // IN FUTURE GAME, THIS MIGHT NEED TO CHECK IF HOME STATION IS PRESENT FOR PRIVATE
-        if (tracks.find((i) => i.narrow)) {
-          return;
+        // Need to check not only adjacent to narrow, but also connected to relevant home
+        let relevantHomes: ICoordinates[];
+        if (G.toBuild! > 2) {
+          // Independent
+          relevantHomes = [G.companies[G.toBuild!].home!]
+        } else {
+          // Must have merged in. Need connection to one of its privates
+          relevantHomes = G.companies[G.toBuild!].independentHomesOwned!;
         }
+        return;
       }
 
       if (count > 0 && !biome.secondCost) {
@@ -340,7 +347,7 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
         return; // Not enough cash
       }
 
-      buildableSpaces.push({x: i.x, y: i.y, cost: cost!});
+      buildableSpaces.push({ x: i.x, y: i.y, cost: cost! });
     })
   })
 
@@ -364,7 +371,8 @@ export const CompanyInitialState: ICompany[] = [
     sharesHeld: [],
     sharesRemaining: 2,
     reservedSharesRemaining: 4,
-    home: { x: 2, y: 3 }
+    home: { x: 2, y: 3 },
+    independentHomesOwned: [],
   },
   {
     // TMLC
@@ -377,7 +385,8 @@ export const CompanyInitialState: ICompany[] = [
     sharesHeld: [],
     sharesRemaining: 4,
     reservedSharesRemaining: 0,
-    home: { x: 7, y: 3 }
+    home: { x: 7, y: 3 },
+    independentHomesOwned: [],
   },
   {
     // LW
@@ -390,7 +399,8 @@ export const CompanyInitialState: ICompany[] = [
     sharesHeld: [],
     sharesRemaining: 3,
     reservedSharesRemaining: 0,
-    home: { x: 7, y: 3 }
+    home: { x: 7, y: 3 },
+    independentHomesOwned: [],
   },
   {
     // GT
@@ -402,7 +412,8 @@ export const CompanyInitialState: ICompany[] = [
     bonds: [{ deferred: true, amount: 10, baseInterest: 3, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
-    reservedSharesRemaining: 0
+    reservedSharesRemaining: 0,
+    independentHomesOwned: [],
   },
   {
     // MLM
@@ -414,7 +425,8 @@ export const CompanyInitialState: ICompany[] = [
     bonds: [{ deferred: true, amount: 15, baseInterest: 4, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
-    reservedSharesRemaining: 0
+    reservedSharesRemaining: 0,
+    independentHomesOwned: [],
   },
   {
     // NED
@@ -426,7 +438,8 @@ export const CompanyInitialState: ICompany[] = [
     bonds: [{ deferred: true, amount: 15, baseInterest: 6, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
-    reservedSharesRemaining: 0
+    reservedSharesRemaining: 0,
+    independentHomesOwned: [],
   },
   {
     // NMF
@@ -438,7 +451,8 @@ export const CompanyInitialState: ICompany[] = [
     bonds: [{ deferred: true, amount: 15, baseInterest: 7, interestDelta: 1 }],
     sharesHeld: [],
     sharesRemaining: 1,
-    reservedSharesRemaining: 0
+    reservedSharesRemaining: 0,
+    independentHomesOwned: [],
   },
 ]
 
@@ -738,8 +752,7 @@ export const EmuBayRailwayCompany = {
                   return INVALID_MOVE;
                 };
 
-                if (G.companies[G.toBuild!].cash < thisSpace.cost)
-                {
+                if (G.companies[G.toBuild!].cash < thisSpace.cost) {
                   return INVALID_MOVE;
                 }
                 G.companies[G.toBuild!].cash -= thisSpace.cost;
