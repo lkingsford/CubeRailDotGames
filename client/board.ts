@@ -1,9 +1,11 @@
 import * as PIXI from 'pixi.js'
 import * as State from './state'
-import { IEmuBayState, MAP } from '../game/game'
+import { IEmuBayState, MAP, ICoordinates } from '../game/game'
 
 import { Ctx } from 'boardgame.io';
 
+
+enum CubeTexture { EB, TMLC, LW, Narrow, Resource };
 export class Board extends State.State {
     constructor(app: PIXI.Application,
         resources: { [index: string]: PIXI.LoaderResource }) {
@@ -52,6 +54,7 @@ export class Board extends State.State {
     private static OFFSET_X = -250;
     private static OFFSET_Y = -50;
     private view_scale = 0.5;
+    private cube_place_radius = 60;
 
     public drawMap(gamestate: IEmuBayState, ctx: Ctx): void {
         // Obviously, not for use in animation
@@ -83,6 +86,40 @@ export class Board extends State.State {
                 this.terrain!.addChild(homeSprite);
             }
         })
+
+        // Draw rails and cubes together
+        let CubeLocations: { [index: string ]: PIXI.Texture[] } = {};
+
+        gamestate.resourceCubes.forEach((xy) => {
+            let location = CubeLocations[`${xy.x},${xy.y}`];
+            if (!location) {
+                location = [];
+            }
+            location.push(Board.cubeTextures[CubeTexture.Resource]);
+            CubeLocations[`${xy.x},${xy.y}`] = location;
+        })
+
+        MAP.forEach((terrain) => {
+            terrain.locations.forEach(xy => {
+                let cubesToPlace = CubeLocations[`${xy.x},${xy.y}`];
+                if (!cubesToPlace) {
+                    return;
+                }
+
+                cubesToPlace.forEach((t, i) => {
+                    let sprite = new PIXI.Sprite(t);
+                    sprite.anchor = new PIXI.Point(0.5, 0.5);
+                    // If more than one, they're circled around centre of point
+                    let angle = (i * 2 * Math.PI) / cubesToPlace.length;
+                    let x = Board.TILE_WIDTH * xy.x + Board.OFFSET_X + Math.sin(angle) * this.cube_place_radius;
+                    let y = Board.TILE_HEIGHT * xy.y + Board.OFFSET_Y + (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0)
+                           + Math.cos(angle) * this.cube_place_radius;
+                    sprite.x = x;
+                    sprite.y = y;
+                    this.terrain!.addChild(sprite);
+                });
+            });
+        })
     }
 
     public static addResources(loader: PIXI.Loader): void {
@@ -92,12 +129,18 @@ export class Board extends State.State {
     public static tileTextures: { [index: number]: PIXI.Texture };
     public static companyTextures: { [index: number]: PIXI.Texture };
 
+    public static cubeTextures: { [index: number] : PIXI.Texture };
+
     private static TEXTURE_TILE_WIDTH = 256;
     private static TEXTURE_TILE_HEIGHT = 256;
 
     private static COMPANY_TILE_WIDTH = 128;
     private static COMPANY_TILE_HEIGHT = 128;
     private static COMPANY_TILE_Y = 768;
+
+    private static CUBE_TILE_WIDTH = 128;
+    private static CUBE_TILE_HEIGHT = 128;
+    private static CUBE_TILE_Y = 512;
 
     static getTextures(resources: { [index: string]: PIXI.LoaderResource }) {
         Board.tileTextures = {};
@@ -118,6 +161,14 @@ export class Board extends State.State {
             // TODO: Maybe this shouldn't be hardcoded yaknow
             Board.companyTextures[ix] = new PIXI.Texture(resources["map_tiles"].texture.baseTexture as PIXI.BaseTexture,
                 new PIXI.Rectangle(srcX, srcY, Board.COMPANY_TILE_WIDTH, Board.COMPANY_TILE_HEIGHT));
+        }
+
+        Board.cubeTextures = {};
+        for (let ix = 0; ix < 5; ix++) {
+            let srcX = ix * Board.CUBE_TILE_WIDTH;
+            let srcY = this.CUBE_TILE_Y;
+            Board.cubeTextures[ix] = new PIXI.Texture(resources["map_tiles"].texture.baseTexture as PIXI.BaseTexture,
+                new PIXI.Rectangle(srcX, srcY, Board.CUBE_TILE_WIDTH, Board.CUBE_TILE_HEIGHT));
         }
     }
 }

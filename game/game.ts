@@ -24,7 +24,7 @@ interface IPlayer {
   cash: number;
 }
 
-interface ICoordinates {
+export interface ICoordinates {
   x: number,
   y: number
 }
@@ -66,7 +66,7 @@ export interface IEmuBayState {
   bonds: IBond[];
 };
 
-interface ILocation extends ICoordinates {
+export interface ILocation extends ICoordinates {
   label?: string;
 }
 
@@ -392,7 +392,7 @@ const SETUP_CARDS = [
   [[2],[],[1,1],[],[],[1],[]],
   [[1,1,1,2],[],[],[],[],[],[]],
   [[1],[],[],[],[],[1],[]],
-  [[1],[1],[],[],[],[1]],
+  [[1],[1],[],[],[],[],[1]],
   [[1],[1],[],[],[],[],[]],
   [[],[],[1],[],[1],[],[]]
 ]
@@ -421,7 +421,8 @@ export const EmuBayRailwayCompany = {
     // Setting up resource cubes and homes
     let homeOrder = ctx.random?.Shuffle([CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF])!;
     let setupCardOrder = ctx.random?.Shuffle(SETUP_CARDS);
-    
+    let resourceCubes: ICoordinates[] = [];
+    let resourceToAttemptToPlace: ICoordinates[] = [];
     setupCardOrder?.forEach((setupCard, idx) => {
         let O = SETUP_POINTS[idx];
         let buildPoints = ((SETUP_POINTS[idx].x % 2) == 0) ?
@@ -433,11 +434,26 @@ export const EmuBayRailwayCompany = {
         let buildCoord = buildPoints[idx];
         space.forEach((resource) => {
           // Station
+          if (resource == 1) {
+            // Must be on mountain or forest to build resource
+            resourceToAttemptToPlace.push(buildCoord);
+          };
           if (resource == 2) {
             let co = homeOrder?.pop()!;
             companies[co].home = buildCoord;
-          }
+          };
         });
+      });
+    });
+    MAP.forEach((terrain)=>{
+      if (!terrain.canPlaceResource) {
+        return;
+      }
+      terrain.locations.forEach((xy)=>{
+        let toPlace = resourceToAttemptToPlace.filter((i)=> i.x==xy.x && i.y == xy.y).length;
+        for (let i = 0; i < toPlace; ++i) {
+          resourceCubes.push(xy);
+        }
       });
     });
 
@@ -448,7 +464,7 @@ export const EmuBayRailwayCompany = {
       companies: companies,
       // Starting with take resources spaces filled and pay dividends filled
       actionCubeLocations: [false, false, false, false, false, true, true, true, false, false, true],
-      resourceCubes: [],
+      resourceCubes: resourceCubes,
       track: [],
       bonds: Array.from(INITIAL_AVAILABLE_BONDS),
     }
