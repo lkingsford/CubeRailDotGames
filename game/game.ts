@@ -224,7 +224,16 @@ export const MAP: ITerrain[] = [
     secondCost: 10,
     revenue: (G: IEmuBayState, B: BuildMode) => {
       if (B == BuildMode.Normal) {
-        return 2;
+        let owned = G.track.filter((i) => i.owner == G.toBuild)
+        let biomes = owned.map((i) => getTileBiome(i))
+        let towns = biomes.filter((i) => i?.biomeName == "Town")
+        switch (towns.length) {
+          case 0: return 2;
+          case 1: return 4;
+          case 2: return 6;
+          default:
+            return 0; // Something went wrong
+        }
         // TODO: Change to return depending on amount of towns connected
       } else {
         return fixedNarrowRevenue;
