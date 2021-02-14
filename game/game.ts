@@ -614,6 +614,7 @@ export const EmuBayRailwayCompany = {
                 };
                 G.companies[company].bonds.push(G.bonds[bond]);
                 G.bonds.splice(bond, 1);
+                ctx.events?.endTurn!();
               },
               payDividends: (G: IEmuBayState, ctx: Ctx) => {
                 if (jiggleCubes(G, actions.PayDividend) == INVALID_MOVE) {
@@ -641,7 +642,6 @@ export const EmuBayRailwayCompany = {
             turn: {
               moveLimit: 3
             },
-            next: "takeAction"
           },
           takeResources: {
             moves: {
