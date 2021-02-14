@@ -145,6 +145,19 @@ export class Board extends State.State {
             stage = ctx.activePlayers![+ctx.currentPlayer];
         }
 
+        let costStyle = new PIXI.TextStyle();
+        costStyle.fill = "#ff0000";
+        costStyle.stroke = "black";
+        costStyle.strokeThickness = 4;
+        costStyle.fontWeight = "bold";
+        costStyle.fontSize = 38;
+        let revStyle = new PIXI.TextStyle();
+        revStyle.fill = "#00aa00";
+        revStyle.stroke = "black";
+        revStyle.strokeThickness = 4;
+        revStyle.fontWeight = "bold";
+        revStyle.fontSize = 38;
+
         if (stage == "buildingTrack") {
             if (gamestate.buildsRemaining! > 0) {
                 let allowedSpaces = getAllowedBuildSpaces(gamestate, this.buildMode!);
@@ -158,12 +171,20 @@ export class Board extends State.State {
                     sprite.y = y;
                     this.terrain!.addChild(sprite);
 
-                    let priceSprice = new PIXI.Text(`₤${(xy).cost}`)
-                    priceSprice.x = x;
-                    priceSprice.y = sprite.y + (Board.TILE_HEIGHT / 2) - (Board.TILE_HEIGHT / 5);
-                    priceSprice.anchor = new PIXI.Point(0.5, 0.5);
-                    this.terrain!.addChild(priceSprice);
-                })
+                    let priceSprite = new PIXI.Text(`-₤${(xy).cost}`)
+                    priceSprite.x = x - Board.TILE_WIDTH / 5;
+                    priceSprite.y = sprite.y + (Board.TILE_HEIGHT / 2) - (Board.TILE_HEIGHT / 5);
+                    priceSprite.anchor = new PIXI.Point(0.5, 0.5);
+                    priceSprite.style = costStyle;
+                    this.terrain!.addChild(priceSprite);
+
+                    let revSprite = new PIXI.Text(`+₤${(xy).rev}`)
+                    revSprite.x = x + Board.TILE_WIDTH / 5;
+                    revSprite.y = sprite.y + (Board.TILE_HEIGHT / 2) - (Board.TILE_HEIGHT / 5);
+                    revSprite.anchor = new PIXI.Point(0.5, 0.5);
+                    revSprite.style = revStyle;
+                    this.terrain!.addChild(revSprite);
+                 })
             }
         }
     }
