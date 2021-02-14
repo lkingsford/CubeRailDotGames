@@ -383,6 +383,31 @@ const STARTING_BONDS: IBond[] = [
   { deferred: true, amount: 15, baseInterest: 5, interestDelta: 2},
 ]
 
+const SETUP_CARDS = [
+  // C N NE SE S SW NW
+  // Cube = 1
+  // Station = 2
+  [[1,2], [1,1],[],[1],[],[],[]],
+  [[2],[1],[1],[],[],[],[]],
+  [[2],[],[1,1],[],[],[1],[]],
+  [[1,1,1,2],[],[],[],[],[],[]],
+  [[1],[],[],[],[],[1],[]],
+  [[1],[1],[],[],[],[1]],
+  [[1],[1],[],[],[],[],[]],
+  [[],[],[1],[],[1],[],[]]
+]
+
+const SETUP_POINTS : ICoordinates[] = [
+  {x: 2, y: 2},
+  {x: 3, y: 4},
+  {x: 3, y: 5},
+  {x: 4, y: 4},
+  {x: 4, y: 6},
+  {x: 5, y: 8},
+  {x: 9, y: 1},
+  {x: 9, y: 3}
+]
+
 // TODO: Detect when there is a stalemate
 export const EmuBayRailwayCompany = {
   setup: (ctx: Ctx): IEmuBayState => {
@@ -392,6 +417,30 @@ export const EmuBayRailwayCompany = {
       companies[idx].bonds.push(i);
       companies[idx].cash = i.amount;
     });
+    
+    // Setting up resource cubes and homes
+    let homeOrder = ctx.random?.Shuffle([CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF])!;
+    let setupCardOrder = ctx.random?.Shuffle(SETUP_CARDS);
+    
+    setupCardOrder?.forEach((setupCard, idx) => {
+        let O = SETUP_POINTS[idx];
+        let buildPoints = ((SETUP_POINTS[idx].x % 2) == 0) ?
+          // Even x
+          [{x: O.x, y: O.y}, {x: O.x, y: O.y - 1}, {x: O.x + 1, y: O.y}, {x: O.x + 1, y: O.y + 1 }, {x: O.x, y: O.y + 1}, {x: O.x - 1, y: O.y + 1}, {x: O.x - 1, y: O.y}] :
+          // Odd x
+          [{x: O.x, y: O.y}, {x: O.x, y: O.y - 1}, {x: O.x + 1, y: O.y - 1}, {x: O.x + 1, y: O.y}, {x: O.x, y: O.y + 1}, {x: O.x - 1, y: O.y}, {x: O.x - 1, y: O.y - 1}];
+      setupCard.forEach((space, idx) => {
+        let buildCoord = buildPoints[idx];
+        space.forEach((resource) => {
+          // Station
+          if (resource == 2) {
+            let co = homeOrder?.pop()!;
+            companies[co].home = buildCoord;
+          }
+        });
+      });
+    });
+
     return {
       players: [...new Array(ctx.numPlayers)].map((): IPlayer => ({
         cash: Math.ceil(STARTING_CASH / ctx.numPlayers)
