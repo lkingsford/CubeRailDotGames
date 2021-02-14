@@ -3,7 +3,6 @@ import { Ctx } from 'boardgame.io'
 import { debug } from 'webpack';
 import { Events } from 'boardgame.io/dist/types/src/plugins/events/events';
 import { BuildMode } from '../client/board';
-import { AggregateError } from 'bluebird';
 import { gameEvent } from 'boardgame.io/dist/types/src/core/action-creators';
 
 enum CompanyID {
@@ -82,11 +81,12 @@ interface ITerrain {
   canPlaceResource: boolean;
   firstCost: number;
   secondCost: number | null;
-  revenueRequiresTown: boolean;
-  revenue: number[];
+  revenue: (gamestate: IEmuBayState, buildmode: BuildMode) => number;
   textureIndex: number;
   locations: ILocation[];
 }
+
+const fixedNarrowRevenue = 3;
 
 // This should be generatable, or compatible with 18xxMaker or something
 export const MAP: ITerrain[] = [
@@ -95,8 +95,14 @@ export const MAP: ITerrain[] = [
     canPlaceResource: false,
     firstCost: 4,
     secondCost: 8,
-    revenueRequiresTown: true,
-    revenue: [2],
+    revenue: (G: IEmuBayState, B: BuildMode) => {
+      if (B == BuildMode.Normal) {
+        return 2;
+        // TODO: Check if town present
+      } else {
+        return fixedNarrowRevenue;
+      }
+    },
     textureIndex: 0,
     locations: [{ x: 1, y: 1 },
     { x: 3, y: 2 },
@@ -124,8 +130,13 @@ export const MAP: ITerrain[] = [
     canPlaceResource: false,
     firstCost: 6,
     secondCost: 10,
-    revenueRequiresTown: false,
-    revenue: [0],
+    revenue: (G: IEmuBayState, B: BuildMode) => {
+      if (B == BuildMode.Normal) {
+        return 0;
+      } else {
+        return fixedNarrowRevenue;
+      }
+    },
     textureIndex: 3,
     locations: [{ x: 1, y: 4, label: "Port of Strahan" },
     { x: 4, y: 1, label: "Port of Burnie" },
@@ -138,8 +149,13 @@ export const MAP: ITerrain[] = [
     canPlaceResource: true,
     firstCost: 4,
     secondCost: null,
-    revenueRequiresTown: false,
-    revenue: [1],
+    revenue: (G: IEmuBayState, B: BuildMode) => {
+      if (B == BuildMode.Normal) {
+        return 1;
+      } else {
+        return fixedNarrowRevenue;
+      }
+    },
     textureIndex: 1,
     locations: [{ x: 1, y: 2 },
     { x: 1, y: 3 },
@@ -169,8 +185,13 @@ export const MAP: ITerrain[] = [
     canPlaceResource: true,
     firstCost: 10,
     secondCost: null,
-    revenueRequiresTown: false,
-    revenue: [2],
+    revenue: (G: IEmuBayState, B: BuildMode) => {
+      if (B == BuildMode.Normal) {
+        return 2;
+      } else {
+        return fixedNarrowRevenue;
+      }
+    },
     textureIndex: 4,
     locations: [{ x: 2, y: 2 },
     { x: 3, y: 4 },
@@ -191,8 +212,14 @@ export const MAP: ITerrain[] = [
     canPlaceResource: false,
     firstCost: 6,
     secondCost: 10,
-    revenueRequiresTown: false,
-    revenue: [2, 4, 6],
+    revenue: (G: IEmuBayState, B: BuildMode) => {
+      if (B == BuildMode.Normal) {
+        return 2;
+        // TODO: Change to return depending on amount of towns connected
+      } else {
+        return fixedNarrowRevenue;
+      }
+    },
     textureIndex: 2,
     locations: [{ x: 5, y: 2, label: "Devenport" },
     { x: 7, y: 3, label: "Launceston" },
@@ -380,15 +407,9 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
         }
       }
 
-      let revenue: number = 0;
-      
-      if (biome.revenue.length == 1) { revenue = biome.revenue[0]; }
+      let revenue = biome.revenue(G, buildmode);
 
-      if (biome.revenue.length > 1) {
-        //  
-      }
-
-      buildableSpaces.push({ x: i.x, y: i.y, cost: cost!, rev: revenue!});
+      buildableSpaces.push({ x: i.x, y: i.y, cost: cost!, rev: revenue! });
     })
   })
 
@@ -580,7 +601,7 @@ export const EmuBayRailwayCompany = {
             companies[co].home = buildCoord;
 
             // Build track so other bases are passthroughable
-            track.push ({x: buildCoord.x, y: buildCoord.y, narrow: true});
+            track.push({ x: buildCoord.x, y: buildCoord.y, narrow: true });
           };
         });
       });
@@ -801,6 +822,7 @@ export const EmuBayRailwayCompany = {
                   return INVALID_MOVE;
                 }
                 G.companies[G.toBuild!].cash -= thisSpace.cost;
+                G.companies[G.toBuild!].currentRevenue += thisSpace.rev;
 
                 G.track.push({
                   x: xy.x,
@@ -816,7 +838,7 @@ export const EmuBayRailwayCompany = {
                 }
                 G.anyActionsTaken = true;
                 G.buildsRemaining! -= 1;
-                
+
                 //TODO: Revenue
               },
 
