@@ -875,7 +875,7 @@ export const EmuBayRailwayCompany = {
           },
           takeResources: {
             moves: {
-              takeResource: (G: IEmuBayState, ctx: Ctx, x: number, y: number) => {
+              takeResource: (G: IEmuBayState, ctx: Ctx, xy: ICoordinates) => {
               },
               doneTaking: (G: IEmuBayState, ctx: Ctx) => {
                 if (!G.anyActionsTaken) {

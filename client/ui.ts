@@ -113,6 +113,10 @@ export class Ui {
                             case actions.Merge:
                                 this.clearActionExtras();
                                 break;
+                            case actions.TakeResources:
+                                this.clearActionExtras();
+                                contentDiv?.appendChild(this.takeResourcesExtra(gamestate, ctx, client));
+                                break;
                             case actions.PayDividend:
                                 this.clearActionExtras();
                                 client.moves.payDividends();
@@ -155,6 +159,13 @@ export class Ui {
                     client.moves.buildTrack(xy, this.buildMode);
                 }
                 contentDiv?.append(this.buildTrackStage(gamestate, ctx, client, board));
+            }
+
+            if (stage == "takeResources") {
+                board.tileClickedOn = (xy) => {
+                    client.moves.takeResource(xy);
+                }
+                contentDiv?.append(this.takeResourcesStage(gamestate, ctx, client));
             }
 
             let phase = ctx.phase;
@@ -641,4 +652,68 @@ export class Ui {
 
         return stageDiv;
     };
+
+    private takeResourcesExtra(gamestate: IEmuBayState, ctx: Ctx, client: any): HTMLElement {
+        let takeResourcesExtraDiv = document.createElement("div");
+        takeResourcesExtraDiv.classList.add("actionextra");
+
+        // TODO: Limit to with mineable resources and cash
+        let available = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
+            .filter((c) => {
+                if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length > 0) { return true };
+                return false;
+            })
+        let dirH1 = document.createElement("h1");
+        dirH1.innerText = "Pick a company to take resources";
+        takeResourcesExtraDiv.appendChild(dirH1);
+        available.forEach((i) => {
+            let coP = document.createElement("p");
+            coP.classList.add(COMPANY_ABBREV[i.idx]);
+            coP.classList.add("chooseableaction");
+            coP.classList.add("coToChoose")
+            coP.innerText = COMPANY_NAME[i.idx];
+            coP.dataset.co = i.idx.toString();
+            coP.onclick = (cop_ev) => {
+                let element = (cop_ev.currentTarget as HTMLElement)
+                let co = +element!.dataset!.co!;
+                client.moves.takeResources(+(cop_ev.currentTarget as HTMLElement)!.dataset!.co!);
+            }
+            takeResourcesExtraDiv.appendChild(coP);
+        })
+        return takeResourcesExtraDiv;
+    }
+
+    private takeResourcesStage(gamestate: IEmuBayState, ctx: Ctx, client: any): HTMLElement {
+        let takeResourcesStageDiv = document.createElement("div");
+        takeResourcesStageDiv.classList.add("actionextra");
+
+        let title = document.createElement("h1");
+        
+                title.innerText = `Building Track (${COMPANY_NAME[gamestate.toBuild!]})`;
+        title.classList.add(COMPANY_ABBREV[gamestate.toBuild!]);
+        takeResourcesStageDiv.append(title);
+
+        let co = gamestate.companies[gamestate.toBuild!]!;
+
+
+                {
+            let cashP = document.createElement("p")
+            cashP.innerText = `₤${co.cash}`;
+            takeResourcesStageDiv?.append(cashP);
+        }
+        if (gamestate.anyActionsTaken) {
+            let passP = document.createElement("p");
+            passP.classList.add("chooseableaction");
+            passP.innerText = "Finish taking";
+            passP.onclick = (ev) => {
+                client.moves.doneBuilding();
+            }
+            takeResourcesStageDiv?.append(passP);
+        } else {
+            let passP = document.createElement("p");
+            passP.innerText = "Must take at least one resource";
+            takeResourcesStageDiv?.append(passP);
+        }
+        return takeResourcesStageDiv;
+    }
 }
