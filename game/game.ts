@@ -859,8 +859,6 @@ export const EmuBayRailwayCompany = {
                 }
                 G.anyActionsTaken = true;
                 G.buildsRemaining! -= 1;
-
-                //TODO: Revenue
               },
 
               doneBuilding: (G: IEmuBayState, ctx: Ctx) => {
@@ -906,7 +904,7 @@ export const EmuBayRailwayCompany = {
       turn: {
         moveLimit: 1,
         order: {
-          first: (G: IEmuBayState, ctx: Ctx) => 0,
+          first: (G: IEmuBayState, ctx: Ctx) => G.playerInitialBidder!,
           next: (G: IEmuBayState, ctx: Ctx) => {
             if (!G.auctionFinished) {
               var nextPlayerPos = (ctx.playOrderPos + 1) % ctx.numPlayers;
