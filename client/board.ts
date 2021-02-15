@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js'
 import * as State from './state'
-import { IEmuBayState, MAP, ICoordinates, getAllowedBuildSpaces } from '../game/game'
+import { IEmuBayState, MAP, ICoordinates, getAllowedBuildSpaces, getTakeResourceSpaces } from '../game/game'
 
 import { Ctx } from 'boardgame.io';
 
@@ -186,6 +186,20 @@ export class Board extends State.State {
                     this.terrain!.addChild(revSprite);
                  })
             }
+        }
+
+        if (stage == "takeResources") {
+            let allowedSpaces = getTakeResourceSpaces(gamestate);
+                allowedSpaces.forEach((xy) => {
+                    let sprite = new PIXI.Sprite(Board.canChooseTexture);
+                    sprite.anchor = new PIXI.Point(0.5, 0.5);
+                    // If more than one, they're circled around centre of point
+                    let x = Board.TILE_WIDTH * xy.x + Board.OFFSET_X;
+                    let y = Board.TILE_HEIGHT * xy.y + Board.OFFSET_Y + (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0);
+                    sprite.x = x;
+                    sprite.y = y;
+                    this.terrain!.addChild(sprite);
+                })
         }
     }
 

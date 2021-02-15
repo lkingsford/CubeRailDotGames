@@ -69,7 +69,7 @@ export interface IEmuBayState {
   buildsRemaining?: number;
   independentAvailable?: CompanyID | null;
   bonds: IBond[];
-  toBuild?: CompanyID;
+  toAct?: CompanyID;
 };
 
 export interface ILocation extends ICoordinates {
@@ -105,7 +105,7 @@ export const MAP: ITerrain[] = [
     revenue: (G: IEmuBayState, B: BuildMode) => {
       if (B == BuildMode.Normal) {
         // Is town present?
-        let owned = G.track.filter((i) => i.owner == G.toBuild)
+        let owned = G.track.filter((i) => i.owner == G.toAct)
         let biomes = owned.map((i) => getTileBiome(i))
         let anyTowns = biomes.find((i) => i?.biomeName == "Town") != undefined;
         return anyTowns ? 2 : 0;
@@ -224,7 +224,7 @@ export const MAP: ITerrain[] = [
     secondCost: 10,
     revenue: (G: IEmuBayState, B: BuildMode) => {
       if (B == BuildMode.Normal) {
-        let owned = G.track.filter((i) => i.owner == G.toBuild)
+        let owned = G.track.filter((i) => i.owner == G.toAct)
         let biomes = owned.map((i) => getTileBiome(i))
         let towns = biomes.filter((i) => i?.biomeName == "Town")
         switch (towns.length) {
@@ -347,7 +347,7 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
 
       // Check for already containing relevant home/track
       if (buildmode == BuildMode.Normal) {
-        if (homes.find((i) => i.idx == G.toBuild) || tracks.find((i) => i.owner == G.toBuild)) {
+        if (homes.find((i) => i.idx == G.toAct) || tracks.find((i) => i.owner == G.toAct)) {
           return;
         }
       }
@@ -364,12 +364,12 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
 
       let cost = (count == 0) ? biome.firstCost : biome.secondCost;
 
-      if (cost! > G.companies[G.toBuild!].cash) {
+      if (cost! > G.companies[G.toAct!].cash) {
         return; // Not enough cash
       }
 
-      if (buildmode == BuildMode.Normal && G.companies[G.toBuild!].trainsRemaining == 0) { return }
-      if (buildmode == BuildMode.Narrow && G.companies[G.toBuild!].narrowGaugeRemaining == 0) { return }
+      if (buildmode == BuildMode.Normal && G.companies[G.toAct!].trainsRemaining == 0) { return }
+      if (buildmode == BuildMode.Narrow && G.companies[G.toAct!].narrowGaugeRemaining == 0) { return }
 
       // Check for adjacency
       if (buildmode == BuildMode.Normal) {
@@ -378,7 +378,7 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
           let tracks = G.track.filter((t) => (i.x == t.x && i.y == t.y));
           let homes = G.companies.map((co, idx) => ({ co: co, idx: idx }))
             .filter((t) => (t.co.home?.x == i.x && t.co.home?.y == i.y));
-          return tracks.find((i) => i.owner == G.toBuild) || homes.find((i) => i.idx == G.toBuild);
+          return tracks.find((i) => i.owner == G.toAct) || homes.find((i) => i.idx == G.toAct);
         })) {
           //  None are adjacent, return
           return;
@@ -387,12 +387,12 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
       else {
         // Need to check not only adjacent to narrow, but also connected to relevant home
         let relevantHomes: ICoordinates[];
-        if (G.toBuild! > 2) {
+        if (G.toAct! > 2) {
           // Independent
-          relevantHomes = [G.companies[G.toBuild!].home!]
+          relevantHomes = [G.companies[G.toAct!].home!]
         } else {
           // Must have merged in. Need connection to one of its privates
-          relevantHomes = G.companies[G.toBuild!].independentHomesOwned!;
+          relevantHomes = G.companies[G.toAct!].independentHomesOwned!;
         }
 
         // This should be cached - a fair bit of repetition happening here.
@@ -433,6 +433,10 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
   })
 
   return buildableSpaces;
+}
+
+export function getTakeResourceSpaces(G: IEmuBayState): ICoordinates[]{
+  return G.resourceCubes;
 }
 
 export const InitialAuctionOrder = [CompanyID.LW, CompanyID.TMLC, CompanyID.EB, CompanyID.GT]
@@ -758,7 +762,7 @@ export const EmuBayRailwayCompany = {
                 if (jiggleCubes(G, actions.BuildTrack) == INVALID_MOVE) {
                   return INVALID_MOVE;
                 };
-                G.toBuild = company;
+                G.toAct = company;
                 G.buildsRemaining = 3;
                 G.anyActionsTaken = false;
                 ctx.events?.setStage!("buildingTrack");
@@ -767,6 +771,7 @@ export const EmuBayRailwayCompany = {
                 if (jiggleCubes(G, actions.TakeResources) == INVALID_MOVE) {
                   return INVALID_MOVE;
                 };
+                G.toAct = company;
                 ctx.events?.setStage!("takeResources");
               },
               auctionShare: (G: IEmuBayState, ctx: Ctx, company: number) => {
@@ -818,11 +823,11 @@ export const EmuBayRailwayCompany = {
               buildTrack: (G: IEmuBayState, ctx: Ctx, xy: ICoordinates, buildMode: BuildMode) => {
                 // Must have track remaining
                 if (buildMode == BuildMode.Normal) {
-                  if (G.companies[G.toBuild!].trainsRemaining == 0) {
+                  if (G.companies[G.toAct!].trainsRemaining == 0) {
                     return INVALID_MOVE;
                   }
                 } else {
-                  if (G.companies[G.toBuild!].narrowGaugeRemaining == 0) {
+                  if (G.companies[G.toAct!].narrowGaugeRemaining == 0) {
                     return INVALID_MOVE;
                   }
                 }
@@ -839,23 +844,23 @@ export const EmuBayRailwayCompany = {
                   return INVALID_MOVE;
                 };
 
-                if (G.companies[G.toBuild!].cash < thisSpace.cost) {
+                if (G.companies[G.toAct!].cash < thisSpace.cost) {
                   return INVALID_MOVE;
                 }
-                G.companies[G.toBuild!].cash -= thisSpace.cost;
-                G.companies[G.toBuild!].currentRevenue += thisSpace.rev;
+                G.companies[G.toAct!].cash -= thisSpace.cost;
+                G.companies[G.toAct!].currentRevenue += thisSpace.rev;
 
                 G.track.push({
                   x: xy.x,
                   y: xy.y,
                   narrow: buildMode == BuildMode.Narrow,
-                  owner: buildMode == BuildMode.Normal ? G.toBuild! : undefined
+                  owner: buildMode == BuildMode.Normal ? G.toAct! : undefined
                 });
                 if (buildMode == BuildMode.Normal) {
-                  G.companies[G.toBuild!].trainsRemaining -= 1;
+                  G.companies[G.toAct!].trainsRemaining -= 1;
                 }
                 else {
-                  G.companies[G.toBuild!].narrowGaugeRemaining -= 1;
+                  G.companies[G.toAct!].narrowGaugeRemaining -= 1;
                 }
                 G.anyActionsTaken = true;
                 G.buildsRemaining! -= 1;

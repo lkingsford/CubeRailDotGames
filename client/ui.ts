@@ -566,11 +566,11 @@ export class Ui {
     private buildTrackStage(gamestate: IEmuBayState, ctx: Ctx, client: any, board: Board): HTMLElement {
         let stageDiv = document.createElement("div");
         let title = document.createElement("h1");
-        title.innerText = `Building Track (${COMPANY_NAME[gamestate.toBuild!]})`;
-        title.classList.add(COMPANY_ABBREV[gamestate.toBuild!]);
+        title.innerText = `Building Track (${COMPANY_NAME[gamestate.toAct!]})`;
+        title.classList.add(COMPANY_ABBREV[gamestate.toAct!]);
         stageDiv.append(title);
 
-        let co = gamestate.companies[gamestate.toBuild!]!;
+        let co = gamestate.companies[gamestate.toAct!]!;
 
         {
             let cashP = document.createElement("p")
@@ -676,7 +676,7 @@ export class Ui {
             coP.onclick = (cop_ev) => {
                 let element = (cop_ev.currentTarget as HTMLElement)
                 let co = +element!.dataset!.co!;
-                client.moves.takeResources(+(cop_ev.currentTarget as HTMLElement)!.dataset!.co!);
+                client.moves.mineResource(+(cop_ev.currentTarget as HTMLElement)!.dataset!.co!);
             }
             takeResourcesExtraDiv.appendChild(coP);
         })
@@ -688,15 +688,15 @@ export class Ui {
         takeResourcesStageDiv.classList.add("actionextra");
 
         let title = document.createElement("h1");
-        
-                title.innerText = `Building Track (${COMPANY_NAME[gamestate.toBuild!]})`;
-        title.classList.add(COMPANY_ABBREV[gamestate.toBuild!]);
+
+        title.innerText = `Take resources from map (${COMPANY_NAME[gamestate.toAct!]})`;
+        title.classList.add(COMPANY_ABBREV[gamestate.toAct!]);
         takeResourcesStageDiv.append(title);
 
-        let co = gamestate.companies[gamestate.toBuild!]!;
+        let co = gamestate.companies[gamestate.toAct!]!;
 
 
-                {
+        {
             let cashP = document.createElement("p")
             cashP.innerText = `₤${co.cash}`;
             takeResourcesStageDiv?.append(cashP);
