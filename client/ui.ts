@@ -1,6 +1,9 @@
 import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
-import { getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond, ICoordinates } from "../game/game";
+import {
+    getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond,
+    ICoordinates, getMergableCompanies, CompanyType} 
+    from "../game/game";
 import { BuildMode, Board } from "../client/board";
 
 const muuri = require("muuri/dist/muuri")
@@ -112,6 +115,7 @@ export class Ui {
                                 break;
                             case actions.Merge:
                                 this.clearActionExtras();
+                                contentDiv?.appendChild(this.mergeExtra(gamestate, ctx, client));
                                 break;
                             case actions.TakeResources:
                                 this.clearActionExtras();
@@ -314,6 +318,14 @@ export class Ui {
                 grid.add(outerDiv);
             }
 
+            if (co.open) {
+                outerDiv!.classList.remove("closed")
+            }
+            else
+            {
+                outerDiv!.classList.add("closed")
+            }
+
             contentDiv!.innerHTML = '';
             let cashP = document.createElement("p");
             cashP.innerText = `Cash ₤${co.cash}`;
@@ -429,7 +441,7 @@ export class Ui {
             .filter((c) => {
                 // If a public company, or private but next, and share available - list
                 if (c.value.sharesRemaining == 0) { return false; }
-                if (c.idx > 3 && c.idx != gamestate.independentAvailable) { return false; }
+                if (c.value.companyType == CompanyType.Minor && (gamestate.independentOrder.length == 0 || c.idx != gamestate.independentOrder[0])) { return false; }
                 return true;
             })
         let dirH1 = document.createElement("h1");
@@ -721,5 +733,42 @@ export class Ui {
             takeResourcesStageDiv?.append(passP);
         }
         return takeResourcesStageDiv;
+    }
+
+    private mergeExtra(gamestate: IEmuBayState, ctx: Ctx, client: any): HTMLElement {
+        let takeResourcesExtraDiv = document.createElement("div");
+        takeResourcesExtraDiv.classList.add("actionextra");
+
+        // TODO: Limit to with mineable resources and cash
+        let available = getMergableCompanies(gamestate, ctx);
+
+        let dirH1 = document.createElement("h1");
+        dirH1.innerText = "Merge companies";
+        takeResourcesExtraDiv.appendChild(dirH1);
+        available.forEach((i) => {
+            let choice = document.createElement("div");
+            choice.classList.add("chooseableaction");
+            choice.dataset.major = i.major.toString();
+            choice.dataset.minor = i.minor.toString();
+
+            let majorP = document.createElement("p");
+            majorP.classList.add(COMPANY_ABBREV[i.major]);
+            majorP.innerText = COMPANY_NAME[i.major];
+            choice.appendChild(majorP);
+
+            let minorP = document.createElement("p");
+            minorP.classList.add(COMPANY_ABBREV[i.minor]);
+            minorP.innerText = COMPANY_NAME[i.minor];
+            choice.appendChild(minorP);
+            
+            choice.onclick = (cop_ev) => {
+                let element = (cop_ev.currentTarget as HTMLElement)
+                let major = +element!.dataset!.major!;
+                let minor = +element!.dataset!.minor!;
+                client.moves.merge(major, minor);
+            }
+            takeResourcesExtraDiv.appendChild(choice);
+        })
+        return takeResourcesExtraDiv;
     }
 }

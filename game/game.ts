@@ -37,6 +37,8 @@ interface ITrackBuilt extends ICoordinates {
   narrow: boolean;
 }
 
+export enum CompanyType {Major, Minor};
+
 interface ICompany {
   cash: number;
   trainsRemaining: number;
@@ -49,6 +51,8 @@ interface ICompany {
   reservedSharesRemaining: number;
   home?: ICoordinates;
   independentHomesOwned: ICoordinates[];
+  companyType: CompanyType;
+  open: boolean;
 }
 
 export interface IEmuBayState {
@@ -67,7 +71,7 @@ export interface IEmuBayState {
   auctionFinished?: boolean;
   anyActionsTaken?: boolean;
   buildsRemaining?: number;
-  independentAvailable?: CompanyID | null;
+  independentOrder: CompanyID[];
   bonds: IBond[];
   toAct?: CompanyID;
 };
@@ -293,6 +297,7 @@ export function getMinimumBid(G: IEmuBayState) {
   return Math.max(1, Math.ceil(G.companies[G.companyForAuction!].currentRevenue / sharesHeldCount));
 }
 
+
 function initialAuctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
   G.players[G.winningBidder!].cash -= G.currentBid!;
   G.companies[G.companyForAuction!].cash += G.currentBid!;
@@ -308,7 +313,6 @@ function initialAuctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
     return;
   }
   G.playerAfterAuction = G.companies[CompanyID.GT].sharesHeld[0];
-  setNextIndependent(G);
   G.auctionFinished = true;
   ctx.events!.setPhase!('normalPlay');
 }
@@ -318,20 +322,14 @@ function auctionCompanyWon(G: IEmuBayState, ctx: Ctx) {
   G.players[G.winningBidder!].cash -= G.currentBid!;
   G.companies[G.companyForAuction!].cash += G.currentBid!;
   G.companies[G.companyForAuction!].sharesHeld.push(G.winningBidder!);
+  G.companies[G.companyForAuction!].open = true;
   G.auctionFinished = true;
   // Make the next independent available
-  setNextIndependent(G);
+  if (G.companies[G.companyForAuction!].companyType = CompanyType.Minor) {
+    G.independentOrder.splice(0,1);
+  }
   ctx.events!.setPhase!('normalPlay');
   ctx.events!.endTurn!({ next: G.playerAfterAuction });
-}
-
-function setNextIndependent(G: IEmuBayState) {
-  var notSold = IndependentOrder.filter((i) => G.companies[i].sharesHeld.length == 0);
-  if (notSold.length == 0) {
-    G.independentAvailable = null;
-  } else {
-    G.independentAvailable = notSold[0];
-  }
 }
 
 function jiggleCubes(G: IEmuBayState, actionToTake: actions): string | void {
@@ -544,8 +542,31 @@ export function getTakeResourceSpaces(G: IEmuBayState): ICoordinates[] {
   return accessible.filter((t) => G.resourceCubes.find((r) => r.x == t.x && r.y == t.y) != undefined);
 }
 
+interface IMergable {
+major: number, minor: number
+}
+
+export function getMergableCompanies(G:IEmuBayState, ctx: Ctx): IMergable[] {
+  // All major minor combinations
+  let possibilities: IMergable[] = []
+  for(let maj = 0; maj < G.companies.length; ++maj)
+  {
+    if (G.companies[maj].companyType == CompanyType.Major) {
+      for(let min = 0; min < G.companies.length; ++min)
+      {
+        if (G.companies[min].companyType == CompanyType.Minor &&
+          G.companies[min].open) {
+            possibilities.push({major: maj, minor: min});
+        }
+      }
+    }
+  }
+  // TODO: Limit to companies that have enough shares to merge
+  // TODO: Limit to companies that are connected
+  return possibilities;
+}
+
 export const InitialAuctionOrder = [CompanyID.LW, CompanyID.TMLC, CompanyID.EB, CompanyID.GT]
-export const IndependentOrder = [CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF];
 
 const IndependentStartingRevenue = 3;
 
@@ -563,6 +584,8 @@ export const CompanyInitialState: ICompany[] = [
     reservedSharesRemaining: 4,
     home: { x: 2, y: 3 },
     independentHomesOwned: [],
+    companyType: CompanyType.Major,
+    open: true
   },
   {
     // TMLC
@@ -577,6 +600,8 @@ export const CompanyInitialState: ICompany[] = [
     reservedSharesRemaining: 0,
     home: { x: 7, y: 3 },
     independentHomesOwned: [],
+    companyType: CompanyType.Major,
+    open: true
   },
   {
     // LW
@@ -591,6 +616,8 @@ export const CompanyInitialState: ICompany[] = [
     reservedSharesRemaining: 0,
     home: { x: 7, y: 3 },
     independentHomesOwned: [],
+    companyType: CompanyType.Major,
+    open: true
   },
   {
     // GT
@@ -604,6 +631,8 @@ export const CompanyInitialState: ICompany[] = [
     sharesRemaining: 1,
     reservedSharesRemaining: 0,
     independentHomesOwned: [],
+    companyType: CompanyType.Minor,
+    open: true
   },
   {
     // MLM
@@ -617,6 +646,8 @@ export const CompanyInitialState: ICompany[] = [
     sharesRemaining: 1,
     reservedSharesRemaining: 0,
     independentHomesOwned: [],
+    companyType: CompanyType.Minor,
+    open: false,
   },
   {
     // NED
@@ -630,6 +661,8 @@ export const CompanyInitialState: ICompany[] = [
     sharesRemaining: 1,
     reservedSharesRemaining: 0,
     independentHomesOwned: [],
+    companyType: CompanyType.Minor,
+    open: false,
   },
   {
     // NMF
@@ -643,6 +676,8 @@ export const CompanyInitialState: ICompany[] = [
     sharesRemaining: 1,
     reservedSharesRemaining: 0,
     independentHomesOwned: [],
+    companyType: CompanyType.Minor,
+    open: false,
   },
 ]
 
@@ -757,6 +792,8 @@ export const EmuBayRailwayCompany = {
       // Starting with take resources spaces filled and pay dividends filled
       actionCubeLocations: [false, false, false, false, false, true, true, true, false, false, true],
       resourceCubes: resourceCubes,
+      // GT Excluded because in initial auction already
+      independentOrder: [ CompanyID.MLM, CompanyID.NED, CompanyID.NMF],
       track: track,
       bonds: Array.from(INITIAL_AVAILABLE_BONDS),
     }
@@ -894,8 +931,8 @@ export const EmuBayRailwayCompany = {
                   return INVALID_MOVE;
                 }
                 // Check that it's the next independent available if it's independent
-                if ([CompanyID.GT, CompanyID.MLM, CompanyID.NED, CompanyID.NMF].includes(company)) {
-                  if (company != G.independentAvailable) {
+                if (G.companies[company].companyType == CompanyType.Minor) {
+                  if ((G.independentOrder.length == 0) || (company != G.independentOrder[0])) {
                     console.log("Independent not available");
                   }
                 }
@@ -904,6 +941,7 @@ export const EmuBayRailwayCompany = {
 
                 ctx.events?.setPhase!("auction");
               },
+
               issueBond: (G: IEmuBayState, ctx: Ctx, company: number, bond: number) => {
                 if (jiggleCubes(G, actions.IssueBond) == INVALID_MOVE) {
                   return INVALID_MOVE;
@@ -913,6 +951,41 @@ export const EmuBayRailwayCompany = {
                 G.bonds.splice(bond, 1);
                 ctx.events?.endTurn!();
               },
+
+              merge: (G: IEmuBayState, ctx: Ctx, major: number, minor: number) => {
+                if (getMergableCompanies(G, ctx).find((i) => i.major == major && i.minor == minor) == undefined)
+                {
+                  console.log("Merge is invalid")
+                  return INVALID_MOVE;
+                }
+
+                // Exchange shares
+                  G.companies[major].sharesHeld.push(G.companies[minor].sharesHeld[0]);
+                  G.companies[minor].sharesHeld = [];
+                if (G.companies[major].reservedSharesRemaining > 0) {
+                  G.companies[major].reservedSharesRemaining -= 1;
+                } else {
+                  G.companies[major].sharesRemaining -= 1;
+                  // Special rule for Emu Bay: When any other company is merged in,
+                  // EB reserved share becomes regular share
+                  G.companies[CompanyID.EB].sharesRemaining += 1;
+                  G.companies[CompanyID.EB].reservedSharesRemaining -= 1;
+                }
+
+                // Merge stuff in
+                G.companies[major].bonds.push(...G.companies[minor].bonds);
+                G.companies[major].cash += G.companies[minor].cash;
+                G.companies[major].currentRevenue += G.companies[minor].currentRevenue;
+                G.companies[major].resourcesHeld += G.companies[minor].resourcesHeld;
+                G.companies[major].narrowGaugeRemaining += G.companies[minor].narrowGaugeRemaining;
+                G.companies[major].independentHomesOwned.push(G.companies[minor].home!);
+
+                // Close minor
+                G.companies[minor].open = false;
+
+                ctx.events?.endTurn!();
+              },
+
               payDividends: (G: IEmuBayState, ctx: Ctx) => {
                 if (jiggleCubes(G, actions.PayDividend) == INVALID_MOVE) {
                   return INVALID_MOVE;
