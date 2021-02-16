@@ -73,6 +73,7 @@ export interface IEmuBayState {
   anyActionsTaken?: boolean;
   buildsRemaining?: number;
   independentOrder: CompanyID[];
+  mineLocation?: ICoordinates | null;
   bonds: IBond[];
   toAct?: CompanyID;
 };
@@ -542,6 +543,12 @@ export function getTakeResourceSpaces(G: IEmuBayState, company: number): ICoordi
   };
 
   let accessible = companyAccessibleTrack(G, company);
+
+  // Can only mine one space in the turn
+  if (G.mineLocation != null) {
+    accessible = [G.mineLocation!];
+  }
+
   return accessible.filter((t) => G.resourceCubes.some((r) => r.x == t.x && r.y == t.y));
 }
 
@@ -1017,6 +1024,7 @@ export const EmuBayRailwayCompany = {
                   return INVALID_MOVE;
                 };
                 G.toAct = company;
+                G.mineLocation = null;
                 ctx.events?.setStage!("takeResources");
               },
               auctionShare: (G: IEmuBayState, ctx: Ctx, company: number) => {
@@ -1192,6 +1200,8 @@ export const EmuBayRailwayCompany = {
                 G.resourceCubes.splice(
                   G.resourceCubes.findIndex((i) => i.x == xy.x && i.y == xy.y), 1
                 )
+
+                G.mineLocation = xy;
 
                 // Pay to remove resource cube
                 let co = G.companies[G.toAct!];
