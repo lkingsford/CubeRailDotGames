@@ -142,23 +142,19 @@ export const MAP: ITerrain[] = [
     secondCost: 10,
     revenue: (G: IEmuBayState, B: BuildMode) => {
       if (B == BuildMode.Normal) {
-        if (!connectedToPort(G, G.toAct!))
-        {
+        if (!connectedToPort(G, G.toAct!)) {
           // First connection to port = all resource cubes paying more
           return firstPortConnectionRev(G, G.toAct!);
         }
-        else
-        {
+        else {
           return 0;
         }
       } else {
-        if (!connectedToPort(G, G.toAct!))
-        {
+        if (!connectedToPort(G, G.toAct!)) {
           return firstPortConnectionRev(G, G.toAct!) + fixedNarrowRevenue;
         }
-        else
-        {
-        return fixedNarrowRevenue;
+        else {
+          return fixedNarrowRevenue;
         }
       }
     },
@@ -242,13 +238,26 @@ export const MAP: ITerrain[] = [
         let owned = G.track.filter((i) => i.owner == G.toAct)
         let biomes = owned.map((i) => getTileBiome(i))
         let towns = biomes.filter((i) => i?.biomeName == "Town")
+        let townRev = 0;
         switch (towns.length) {
-          case 0: return 2;
-          case 1: return 4;
-          case 2: return 6;
+          case 0: townRev = 2;
+          case 1: townRev = 4;
+          case 2: townRev = 6;
           default:
-            return 0; // Something went wrong
+            townRev = 0; // Something went wrong
         }
+
+        // If first town, check if any farmland needs to increase
+        let extraFarmRevenue = 0;
+        if (towns.length == 0) {
+          let farmsWithTrack = G.track.filter((i) => i.owner == G.toAct)
+            .filter((i) => getTileBiome(i!)?.biomeName == "Farmland")
+            .length
+          extraFarmRevenue = farmsWithTrack * 2;
+        }
+
+        return extraFarmRevenue + townRev;
+
         // TODO: Change to return depending on amount of towns connected
       } else {
         return fixedNarrowRevenue;
