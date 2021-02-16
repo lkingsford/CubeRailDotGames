@@ -5,6 +5,7 @@ import { Events } from 'boardgame.io/dist/types/src/plugins/events/events';
 import { BuildMode } from '../client/board';
 import { gameEvent } from 'boardgame.io/dist/types/src/core/action-creators';
 import { map } from 'bluebird';
+import { GC_MODES } from 'pixi.js';
 
 enum CompanyID {
   EB = 0,
@@ -568,18 +569,15 @@ export function getMergableCompanies(G: IEmuBayState, ctx: Ctx): IMergable[] {
       let toCheck = [minor.home];
       while (toCheck.length > 0) {
         var Z = toCheck.pop()!;
-        if (visited.find((i)=>Z.x == i.x && Z.y == i.y) != undefined)
-        {
+        if (visited.find((i) => Z.x == i.x && Z.y == i.y) != undefined) {
           // Already visited
           break;
         }
-        if (coTracks.find((i)=>Z.x == i.x && Z.y == i.y) != undefined)
-        {
+        if (coTracks.find((i) => Z.x == i.x && Z.y == i.y) != undefined) {
           // Connected!
           return true;
         }
-        if (narrowTracks.find((i)=>Z.x == i.x && Z.y == i.y) != undefined)
-        {
+        if (narrowTracks.find((i) => Z.x == i.x && Z.y == i.y) != undefined) {
           toCheck.push(...getAdjacent(Z));
         }
       }
@@ -1011,6 +1009,28 @@ export const EmuBayRailwayCompany = {
                 if (jiggleCubes(G, actions.PayDividend) == INVALID_MOVE) {
                   return INVALID_MOVE;
                 };
+                // Pay dividends
+                G.companies.forEach((co) => {
+                  let amount = co.currentRevenue > 0 ? Math.ceil(co.currentRevenue / co.sharesHeld.length) : Math.floor(co.currentRevenue / co.sharesHeld.length);
+                  co.sharesHeld.forEach((n) => {
+                    G.players[n].cash += amount;
+                    console.log(n, " payed ", amount, "for", co)
+                  });
+
+                  // Adjust non-deferred debt
+                  let debtChange = co.bonds.filter((i) => !i.deferred).reduce<number>((p, i) => i.interestDelta + p, 0)
+                  co.currentRevenue -= debtChange;
+                  console.log(co, " revenue reduced by ", debtChange)
+
+                  // Increase debt for each defferd
+                  co.bonds.filter((i) => i.deferred).forEach((i) => {
+                    co.currentRevenue -= i.baseInterest;
+                    console.log(co, " revenue reduced by ", i.baseInterest, " following undefferal")
+                    i.deferred = false;
+                  });
+                })
+
+                // TODO: Check for victory (or loss!)
                 ctx.events?.endTurn!();
               },
             },
