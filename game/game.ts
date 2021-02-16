@@ -502,10 +502,11 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode, com
 
         while (!connected && toCheck.length > 0) {
           let checking = toCheck.pop()!;
-          if (visited.find((i) => i.x == checking.x && i.y == checking.y)) {
+          if (visited.some((i) => i.x == checking.x && i.y == checking.y)) {
             // already visited
-            return
+            continue;
           }
+          visited.push(checking);
 
           if (relevantHomes.find((i) => i.x == checking.x && i.y == checking.y)) {
             connected = true;
