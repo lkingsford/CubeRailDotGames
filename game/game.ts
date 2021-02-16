@@ -5,7 +5,7 @@ import { Events } from 'boardgame.io/dist/types/src/plugins/events/events';
 import { BuildMode } from '../client/board';
 import { gameEvent } from 'boardgame.io/dist/types/src/core/action-creators';
 import { map } from 'bluebird';
-import { GC_MODES } from 'pixi.js';
+import { GC_MODES, systems } from 'pixi.js';
 
 enum CompanyID {
   EB = 0,
@@ -77,6 +77,14 @@ export interface IEmuBayState {
   toAct?: CompanyID;
 };
 
+enum EndGameReason {
+  quit,
+  stalemate,
+  bankruptcy
+}
+export interface IEndgameState {
+  reasons: EndGameReason[];
+}
 export interface ILocation extends ICoordinates {
   label?: string;
 }
@@ -286,9 +294,9 @@ actions.IssueBond,
 actions.Merge,
 actions.PayDividend];
 
-export function getMinimumBid(G: IEmuBayState) {
-  var sharesHeldCount = G.companies[G.companyForAuction!].sharesHeld.length + 1;
-  return Math.max(1, Math.ceil(G.companies[G.companyForAuction!].currentRevenue / sharesHeldCount));
+export function getMinimumBid(G: IEmuBayState, company: number) {
+  var sharesHeldCount = G.companies[company].sharesHeld.length + 1;
+  return Math.max(1, Math.ceil(G.companies[company].currentRevenue / sharesHeldCount));
 }
 
 
@@ -753,6 +761,33 @@ function getAdjacent(xy: ICoordinates): ICoordinates[] {
   }
 }
 
+export function stalemateAvailable(G: IEmuBayState, ctx: Ctx): boolean {
+  var anyAvailable = ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
+    .filter(v => G.actionCubeLocations[v.idx] == false)
+    .map((i)=>ACTION_CUBE_LOCATION_ACTIONS[i.idx])
+    .reduce<actions[]>((last, i)=> (last.includes(i) ? last : last.concat(i)), [])
+    .some((i) => {
+      switch(i) {
+        case actions.AuctionShare:
+          case actions.BuildTrack:
+            break;
+          case actions.IssueBond:
+            break;
+          case actions.Merge:
+            break;
+          case actions.PayDividend:
+            break;
+          case actions.TakeResources:
+            break;
+    }
+    })
+  return anyAvailable;
+}
+
+function getEndgameState(G: IEmuBayState, reason: EndGameReason): IEndgameState {
+  return { reasons: [reason] }
+}
+
 // TODO: Detect when there is a stalemate
 export const EmuBayRailwayCompany = {
   setup: (ctx: Ctx): IEmuBayState => {
@@ -854,7 +889,7 @@ export const EmuBayRailwayCompany = {
       },
       moves: {
         makeBid: (G: IEmuBayState, ctx: Ctx, amount: number) => {
-          if (amount >= getMinimumBid(G) && amount > G.currentBid!) {
+          if (amount >= getMinimumBid(G, G.companyForAuction!) && amount > G.currentBid!) {
             G.winningBidder = +ctx.currentPlayer;
             G.currentBid = amount;
             var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);
@@ -913,6 +948,15 @@ export const EmuBayRailwayCompany = {
                 G.actionCubeLocations[filledSpaces[0].idx] = false;
                 ctx.events?.setStage!("takeAction");
               },
+
+              declareStalemate: (G: IEmuBayState, ctx: Ctx) => {
+                if (stalemateAvailable(G, ctx)) {
+                  ctx.events!.endGame!(getEndgameState(G, EndGameReason.stalemate));
+                }
+                var availableSpaces = ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
+                  .filter(v => G.actionCubeLocations[v.idx] == false);
+
+              }
             },
             turn: {
               moveLimit: 1
@@ -942,7 +986,7 @@ export const EmuBayRailwayCompany = {
                 };
                 G.playerAfterAuction = (ctx.playOrderPos + 1) % ctx.numPlayers;
                 G.companyForAuction = company;
-                if (G.players[+ctx.currentPlayer].cash < getMinimumBid(G)) {
+                if (G.players[+ctx.currentPlayer].cash < getMinimumBid(G, company)) {
                   console.log("Player must be able to pay minimum bid");
                   return INVALID_MOVE;
                 }
@@ -1167,7 +1211,7 @@ export const EmuBayRailwayCompany = {
       },
       moves: {
         makeBid: (G: IEmuBayState, ctx: Ctx, amount: number) => {
-          if (amount >= getMinimumBid(G) && amount > G.currentBid!) {
+          if (amount >= getMinimumBid(G, G.companyForAuction!) && amount > G.currentBid!) {
             G.winningBidder = +ctx.currentPlayer;
             G.currentBid = amount;
             var biddersRemaining = G.passed!.reduce<number>((last: number, current: boolean): number => last - (current ? 1 : 0), ctx.numPlayers);

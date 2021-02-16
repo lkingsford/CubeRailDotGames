@@ -2,7 +2,7 @@ import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
 import {
     getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond,
-    ICoordinates, getMergableCompanies, CompanyType} 
+    ICoordinates, getMergableCompanies, CompanyType, stalemateAvailable, getAllowedBuildSpaces} 
     from "../game/game";
 import { BuildMode, Board } from "../client/board";
 
@@ -68,6 +68,16 @@ export class Ui {
                 case "removeCube":
                     statusDiv.innerText = "Remove a cube"
                     break;
+            }
+
+            if (stage == "removeCube" && stalemateAvailable(gamestate, ctx))
+            {
+                let stalemateDiv = document.createElement("div");
+                stalemateDiv.innerText = "Declare Stalemate";
+                stalemateDiv.classList.add("chooseableaction");
+                stalemateDiv.classList.add("endgameable");
+                stalemateDiv.onclick = (ev)=>(client.moves.declareStalemate());
+                contentDiv?.appendChild(stalemateDiv);
             }
 
             ACTIONS.forEach((actionName, idx) => {
