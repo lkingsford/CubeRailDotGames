@@ -429,7 +429,7 @@ export interface IBuildableSpace extends ICoordinates {
   rev: number;
 }
 
-export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IBuildableSpace[] {
+export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode, company: number): IBuildableSpace[] {
   // Get all buildable spaces
   let buildableSpaces: IBuildableSpace[] = [];
 
@@ -463,12 +463,12 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
 
       let cost = (count == 0) ? biome.firstCost : biome.secondCost;
 
-      if (cost! > G.companies[G.toAct!].cash) {
+      if (cost! > G.companies[company].cash) {
         return; // Not enough cash
       }
 
-      if (buildmode == BuildMode.Normal && G.companies[G.toAct!].trainsRemaining == 0) { return }
-      if (buildmode == BuildMode.Narrow && G.companies[G.toAct!].narrowGaugeRemaining == 0) { return }
+      if (buildmode == BuildMode.Normal && G.companies[company].trainsRemaining == 0) { return }
+      if (buildmode == BuildMode.Narrow && G.companies[company].narrowGaugeRemaining == 0) { return }
 
       // Check for adjacency
       if (buildmode == BuildMode.Normal) {
@@ -486,12 +486,12 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
       else {
         // Need to check not only adjacent to narrow, but also connected to relevant home
         let relevantHomes: ICoordinates[];
-        if (G.toAct! > 2) {
+        if (company > 2) {
           // Independent
-          relevantHomes = [G.companies[G.toAct!].home!]
+          relevantHomes = [G.companies[company].home!]
         } else {
           // Must have merged in. Need connection to one of its privates
-          relevantHomes = G.companies[G.toAct!].independentHomesOwned!;
+          relevantHomes = G.companies[company].independentHomesOwned!;
         }
 
         // This should be cached - a fair bit of repetition happening here.
@@ -534,15 +534,15 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
   return buildableSpaces;
 }
 
-export function getTakeResourceSpaces(G: IEmuBayState): ICoordinates[] {
-  if (G.companies[G.toAct!].cash < resourceCubeCost(G)) {
+export function getTakeResourceSpaces(G: IEmuBayState, company: number): ICoordinates[] {
+  if (G.companies[company].cash < resourceCubeCost(G)) {
     // Doing this here too - can't build if no cash to do it (and simplify board)
     // code in the process
     return [];
   };
 
-  let accessible = companyAccessibleTrack(G, G.toAct!);
-  return accessible.filter((t) => G.resourceCubes.find((r) => r.x == t.x && r.y == t.y) != undefined);
+  let accessible = companyAccessibleTrack(G, company);
+  return accessible.filter((t) => G.resourceCubes.some((r) => r.x == t.x && r.y == t.y));
 }
 
 interface IMergable {
@@ -764,24 +764,63 @@ function getAdjacent(xy: ICoordinates): ICoordinates[] {
 export function stalemateAvailable(G: IEmuBayState, ctx: Ctx): boolean {
   var anyAvailable = ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
     .filter(v => G.actionCubeLocations[v.idx] == false)
-    .map((i)=>ACTION_CUBE_LOCATION_ACTIONS[i.idx])
-    .reduce<actions[]>((last, i)=> (last.includes(i) ? last : last.concat(i)), [])
+    .map((i) => ACTION_CUBE_LOCATION_ACTIONS[i.idx])
+    .reduce<actions[]>((last, i) => (last.includes(i) ? last : last.concat(i)), [])
     .some((i) => {
-      switch(i) {
+      switch (i) {
         case actions.AuctionShare:
-          case actions.BuildTrack:
-            break;
-          case actions.IssueBond:
-            break;
-          case actions.Merge:
-            break;
-          case actions.PayDividend:
-            break;
-          case actions.TakeResources:
-            break;
-    }
-    })
-  return anyAvailable;
+          return G.companies.map((v, i) => ({ value: v, idx: i }))
+            .some((c) => {
+              // If a public company, or private but next, and share available - list
+              if (getMinimumBid(G, c.idx) > G.players[+ctx.currentPlayer].cash) {
+                return false;
+              }
+              if (c.value.sharesRemaining == 0) { return false; }
+              if (c.value.companyType == CompanyType.Minor && (G.independentOrder.length == 0 || c.idx != G.independentOrder[0])) { return false; }
+              return true;
+            })
+
+        case actions.BuildTrack:
+          return G.companies.map((v, i) => ({ value: v, idx: i }))
+            .some((c) => {
+              if (c.value.trainsRemaining == 0 && c.value.narrowGaugeRemaining == 0) { return false };
+              // Check if any buildable spaces
+              if ((getAllowedBuildSpaces(G, BuildMode.Narrow, c.idx).length +
+                getAllowedBuildSpaces(G, BuildMode.Normal, c.idx).length) == 0) {
+                return false;
+              }
+              if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length > 0) { return true };
+              return false;
+            })
+          break;
+
+        case actions.IssueBond:
+          let available = G.companies.map((v, i) => ({ value: v, idx: i }))
+            .some((c) => {
+              // Have to have share, has to not be private
+              if (c.idx >= 3) { return false; }
+              if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length > 0) { return true };
+              return false;
+            }) && G.bonds.length > 0;
+          break;
+
+        case actions.Merge:
+          return getMergableCompanies(G, ctx).length > 0;
+
+        case actions.PayDividend:
+          // Always chooseable if space is available
+          return true;
+
+        case actions.TakeResources:
+          return G.companies.map((v, i) => ({ value: v, idx: i }))
+            .some((c) => {
+              if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length == 0) { return false };
+              if (getTakeResourceSpaces(G, c.idx).length == 0) { return false };
+              return true;
+            })
+      }
+    });
+  return !anyAvailable;
 }
 
 function getEndgameState(G: IEmuBayState, reason: EndGameReason): IEndgameState {
@@ -1102,7 +1141,7 @@ export const EmuBayRailwayCompany = {
                 }
 
                 // Must be in permitted space
-                let allowed = getAllowedBuildSpaces(G, buildMode);
+                let allowed = getAllowedBuildSpaces(G, buildMode, G.toAct!);
                 let thisSpace = allowed.find((i) => i.x == xy.x && i.y == xy.y);
                 if (!thisSpace) {
                   return INVALID_MOVE;
@@ -1145,7 +1184,7 @@ export const EmuBayRailwayCompany = {
           takeResources: {
             moves: {
               takeResource: (G: IEmuBayState, ctx: Ctx, xy: ICoordinates) => {
-                if (!getTakeResourceSpaces(G).find((i) => i.x == xy.x && i.y == xy.y)) {
+                if (!getTakeResourceSpaces(G, G.toAct!).find((i) => i.x == xy.x && i.y == xy.y)) {
                   console.log("Can't take from location");
                   return INVALID_MOVE;
                 }

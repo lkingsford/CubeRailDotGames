@@ -186,7 +186,7 @@ export class Board extends State.State {
 
         if (stage == "buildingTrack") {
             if (gamestate.buildsRemaining! > 0) {
-                let allowedSpaces = getAllowedBuildSpaces(gamestate, this.buildMode!);
+                let allowedSpaces = getAllowedBuildSpaces(gamestate, this.buildMode!, gamestate.toAct!);
                 allowedSpaces.forEach((xy) => {
                     let sprite = new PIXI.Sprite(Board.canChooseTexture);
                     sprite.anchor = new PIXI.Point(0.5, 0.5);
@@ -218,7 +218,7 @@ export class Board extends State.State {
             let cost = resourceCubeCost(gamestate);
             let rev = resourceCubeRevenue(gamestate, gamestate.toAct!);
 
-            let allowedSpaces = getTakeResourceSpaces(gamestate);
+            let allowedSpaces = getTakeResourceSpaces(gamestate, gamestate.toAct!);
             allowedSpaces.forEach((xy) => {
                 let sprite = new PIXI.Sprite(Board.canChooseTexture);
                 sprite.anchor = new PIXI.Point(0.5, 0.5);

@@ -2,7 +2,7 @@ import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
 import {
     getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond,
-    ICoordinates, getMergableCompanies, CompanyType, stalemateAvailable, getAllowedBuildSpaces} 
+    ICoordinates, getMergableCompanies, CompanyType, stalemateAvailable, getAllowedBuildSpaces, getTakeResourceSpaces} 
     from "../game/game";
 import { BuildMode, Board } from "../client/board";
 
@@ -566,6 +566,10 @@ export class Ui {
         let available = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
             .filter((c) => {
                 if (c.value.trainsRemaining == 0 && c.value.narrowGaugeRemaining == 0) { return false };
+                if ((getAllowedBuildSpaces(gamestate, BuildMode.Narrow, c.idx).length + 
+                    getAllowedBuildSpaces(gamestate, BuildMode.Normal, c.idx).length) == 0) {
+                    return false;
+                }
                 if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length > 0) { return true };
                 return false;
             })
@@ -691,8 +695,9 @@ export class Ui {
         // TODO: Limit to with mineable resources and cash
         let available = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
             .filter((c) => {
-                if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length > 0) { return true };
-                return false;
+                if (c.value.sharesHeld.filter((player) => player == +ctx.currentPlayer).length == 0) { return false };
+                if (getTakeResourceSpaces(gamestate, c.idx).length == 0) { return false };
+                return true;
             })
         let dirH1 = document.createElement("h1");
         dirH1.innerText = "Pick a company to take resources";
