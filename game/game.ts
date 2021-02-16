@@ -325,6 +325,76 @@ function jiggleCubes(G: IEmuBayState, actionToTake: actions): string | void {
   G.actionCubeLocations[availableSpaces[0].idx] = true
 }
 
+function resourceCubeCost(G: IEmuBayState): number {
+  // Putting here to make easy to change into formula if I wish later
+  return 3;
+}
+
+function resourceCubeRevenue(G: IEmuBayState, company: number): number {
+  // Maybe this should be in Game too...
+  if (connectedToPort(G, company)) {
+    return 3;
+  } else {
+    return 1;
+  }
+}
+
+function connectedToPort(G: IEmuBayState, company: number): boolean {
+  // Connected if one of the companies tracks, or a narrow gauge
+  // connected to company owned station
+
+  // Simple first
+  let ports = MAP.find((i) => i.biomeName == "Port")!.locations!;
+  let accessibleTrack = companyAccessibleTrack(G, company);
+  let coTrackOnPort = ports.find((i) =>
+    accessibleTrack.find((t) => t.x == i.x && t.y == i.y) != undefined
+  ) != undefined;
+  if (coTrackOnPort) {
+    return true;
+  }
+
+  // Now the annoying narrow gauge one
+  return false;
+}
+
+function companyAccessibleTrack(G: IEmuBayState, company: number): ICoordinates[] {
+  // Returning the companies tracks, and the connected narrowgauge tracks
+
+  // Company
+  let coTracks: ICoordinates[] = G.track.filter((t) => t.owner == company && !t.narrow)
+
+  // Annoying narrow
+  let connectedNarrow: ICoordinates[] = []
+  if (company < 3) {
+    connectedNarrow.push(...G.companies[company].independentHomesOwned);
+  } else {
+    connectedNarrow.push(G.companies[company].home!);
+  }
+  let toCheck: ICoordinates[] = [];
+  toCheck = toCheck.concat(...connectedNarrow.map((i) => getAdjacent(i)));
+
+  let allNarrow = G.track.filter((t) => t.narrow);
+
+  while (toCheck.length > 0) {
+    let checking = toCheck.pop()!;
+    if (connectedNarrow.find((i) => i.x == checking.x && i.y == checking.y)) {
+      // already visited
+      break;
+    }
+
+    if (allNarrow.find((i) => i.x == checking.x && i.y == checking.y)) {
+      // Found - so can connect to others nearby
+      connectedNarrow.push(checking);
+      toCheck.push(...getAdjacent(checking));
+
+      // Don't think efficiency wise worth looping through AGAIN to check if it's
+      // already there. May do maths later if proves an issue.
+    }
+  }
+
+  return coTracks.concat(connectedNarrow);
+}
+
 export interface IBuildableSpace extends ICoordinates {
   cost: number;
   rev: number;
@@ -435,8 +505,15 @@ export function getAllowedBuildSpaces(G: IEmuBayState, buildmode: BuildMode): IB
   return buildableSpaces;
 }
 
-export function getTakeResourceSpaces(G: IEmuBayState): ICoordinates[]{
-  return G.resourceCubes;
+export function getTakeResourceSpaces(G: IEmuBayState): ICoordinates[] {
+  if (G.companies[G.toAct!].cash < resourceCubeCost(G)) {
+    // Doing this here too - can't build if no cash to do it (and simplify board)
+    // code in the process
+    return [];
+  };
+
+  let accessible = companyAccessibleTrack(G, G.toAct!);
+  return accessible.filter((t) => G.resourceCubes.find((r) => r.x == t.x && r.y == t.y) != undefined);
 }
 
 export const InitialAuctionOrder = [CompanyID.LW, CompanyID.TMLC, CompanyID.EB, CompanyID.GT]
@@ -629,7 +706,7 @@ export const EmuBayRailwayCompany = {
 
     // Build track for each home station
     companies.forEach((co, idx) => {
-        track.push({ x: co.home!.x, y: co.home!.y, narrow: idx > 2, owner: idx <= 2 ? idx : undefined });
+      track.push({ x: co.home!.x, y: co.home!.y, narrow: idx > 2, owner: idx <= 2 ? idx : undefined });
     });
 
     MAP.forEach((terrain) => {
@@ -882,6 +959,23 @@ export const EmuBayRailwayCompany = {
           takeResources: {
             moves: {
               takeResource: (G: IEmuBayState, ctx: Ctx, xy: ICoordinates) => {
+                if (!getTakeResourceSpaces(G).find((i) => i.x == xy.x && i.y == xy.y)) {
+                  console.log("Can't take from location");
+                  return INVALID_MOVE;
+                }
+                // Remove resource cube from space
+                G.resourceCubes.splice(
+                  G.resourceCubes.findIndex((i) => i.x == xy.x && i.y == xy.y), 1
+                )
+
+                // Pay to remove resource cube
+                let co = G.companies[G.toAct!];
+                co.cash -= resourceCubeCost(G);
+
+                // Increase revenue
+                co.currentRevenue += resourceCubeRevenue(G, G.toAct!);
+
+                G.anyActionsTaken = true;
               },
               doneTaking: (G: IEmuBayState, ctx: Ctx) => {
                 if (!G.anyActionsTaken) {

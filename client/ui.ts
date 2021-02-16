@@ -706,7 +706,7 @@ export class Ui {
             passP.classList.add("chooseableaction");
             passP.innerText = "Finish taking";
             passP.onclick = (ev) => {
-                client.moves.doneBuilding();
+                client.moves.doneTaking();
             }
             takeResourcesStageDiv?.append(passP);
         } else {
