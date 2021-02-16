@@ -51,7 +51,7 @@ interface ICompany {
   reservedSharesRemaining: number;
   home?: ICoordinates;
   independentHomesOwned: ICoordinates[];
-companyType: CompanyType;
+  companyType: CompanyType;
   open: boolean;
 }
 
@@ -559,7 +559,32 @@ export function getMergableCompanies(G: IEmuBayState, ctx: Ctx): IMergable[] {
     (G.companies[i.minor].sharesHeld.find((i) => i == +ctx.currentPlayer) != undefined))
     // TODO: Limit to companies that have enough shares to merge
     .filter((i) => (G.companies[i.major].sharesRemaining > 0) || G.companies[i.major].reservedSharesRemaining > 0)
-  // TODO: Limit to companies that are connected
+    // TODO: Limit to companies that are connected
+    .filter((i) => {
+      let minor = G.companies[i.minor];
+      let coTracks: ICoordinates[] = G.track.filter((t) => t!.owner! == i.major && !t.narrow);
+      let narrowTracks: ICoordinates[] = G.track.filter((t) => t.narrow);
+      let visited: ICoordinates[] = [];
+      let toCheck = [minor.home];
+      while (toCheck.length > 0) {
+        var Z = toCheck.pop()!;
+        if (visited.find((i)=>Z.x == i.x && Z.y == i.y) != undefined)
+        {
+          // Already visited
+          break;
+        }
+        if (coTracks.find((i)=>Z.x == i.x && Z.y == i.y) != undefined)
+        {
+          // Connected!
+          return true;
+        }
+        if (narrowTracks.find((i)=>Z.x == i.x && Z.y == i.y) != undefined)
+        {
+          toCheck.push(...getAdjacent(Z));
+        }
+      }
+      return false;
+    })
   return possibilities;
 }
 
