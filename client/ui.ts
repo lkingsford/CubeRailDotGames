@@ -209,7 +209,7 @@ export class Ui {
                     contentDiv?.appendChild(passP);
                 }
 
-                let minBid = Math.max(getMinimumBid(gamestate), gamestate.currentBid! + 1);
+                let minBid = Math.max(getMinimumBid(gamestate, gamestate.companyForAuction!), gamestate.currentBid! + 1);
                 if (playerCash >= minBid) {
                     let bidsP = document.createElement("p");
                     bidsP.innerText = "Bid: ";
@@ -440,6 +440,9 @@ export class Ui {
         let toList = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
             .filter((c) => {
                 // If a public company, or private but next, and share available - list
+                if (getMinimumBid(gamestate, c.idx) > gamestate.players[+ctx.currentPlayer].cash) {
+                    return false;
+                }
                 if (c.value.sharesRemaining == 0) { return false; }
                 if (c.value.companyType == CompanyType.Minor && (gamestate.independentOrder.length == 0 || c.idx != gamestate.independentOrder[0])) { return false; }
                 return true;
