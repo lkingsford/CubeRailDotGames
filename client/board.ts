@@ -1,6 +1,9 @@
 import * as PIXI from 'pixi.js'
 import * as State from './state'
-import { IEmuBayState, MAP, ICoordinates, getAllowedBuildSpaces, getTakeResourceSpaces } from '../game/game'
+import {
+    IEmuBayState, MAP, ICoordinates, getAllowedBuildSpaces, getTakeResourceSpaces,
+    resourceCubeCost, resourceCubeRevenue
+} from '../game/game'
 
 import { Ctx } from 'boardgame.io';
 
@@ -184,22 +187,39 @@ export class Board extends State.State {
                     revSprite.anchor = new PIXI.Point(0.5, 0.5);
                     revSprite.style = revStyle;
                     this.terrain!.addChild(revSprite);
-                 })
+                })
             }
         }
 
         if (stage == "takeResources") {
+            let cost = resourceCubeCost(gamestate);
+            let rev = resourceCubeRevenue(gamestate, gamestate.toAct!);
+
             let allowedSpaces = getTakeResourceSpaces(gamestate);
-                allowedSpaces.forEach((xy) => {
-                    let sprite = new PIXI.Sprite(Board.canChooseTexture);
-                    sprite.anchor = new PIXI.Point(0.5, 0.5);
-                    // If more than one, they're circled around centre of point
-                    let x = Board.TILE_WIDTH * xy.x + Board.OFFSET_X;
-                    let y = Board.TILE_HEIGHT * xy.y + Board.OFFSET_Y + (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0);
-                    sprite.x = x;
-                    sprite.y = y;
-                    this.terrain!.addChild(sprite);
-                })
+            allowedSpaces.forEach((xy) => {
+                let sprite = new PIXI.Sprite(Board.canChooseTexture);
+                sprite.anchor = new PIXI.Point(0.5, 0.5);
+                // If more than one, they're circled around centre of point
+                let x = Board.TILE_WIDTH * xy.x + Board.OFFSET_X;
+                let y = Board.TILE_HEIGHT * xy.y + Board.OFFSET_Y + (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0);
+                sprite.x = x;
+                sprite.y = y;
+                this.terrain!.addChild(sprite);
+
+                let priceSprite = new PIXI.Text(`-₤${cost}`)
+                priceSprite.x = x - Board.TILE_WIDTH / 5;
+                priceSprite.y = sprite.y + (Board.TILE_HEIGHT / 2) - (Board.TILE_HEIGHT / 5);
+                priceSprite.anchor = new PIXI.Point(0.5, 0.5);
+                priceSprite.style = costStyle;
+                this.terrain!.addChild(priceSprite);
+
+                let revSprite = new PIXI.Text(`+₤${rev}`)
+                revSprite.x = x + Board.TILE_WIDTH / 5;
+                revSprite.y = sprite.y + (Board.TILE_HEIGHT / 2) - (Board.TILE_HEIGHT / 5);
+                revSprite.anchor = new PIXI.Point(0.5, 0.5);
+                revSprite.style = revStyle;
+                this.terrain!.addChild(revSprite);
+            })
         }
     }
 

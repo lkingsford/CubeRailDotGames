@@ -325,12 +325,12 @@ function jiggleCubes(G: IEmuBayState, actionToTake: actions): string | void {
   G.actionCubeLocations[availableSpaces[0].idx] = true
 }
 
-function resourceCubeCost(G: IEmuBayState): number {
+export function resourceCubeCost(G: IEmuBayState): number {
   // Putting here to make easy to change into formula if I wish later
   return 3;
 }
 
-function resourceCubeRevenue(G: IEmuBayState, company: number): number {
+export function resourceCubeRevenue(G: IEmuBayState, company: number): number {
   // Maybe this should be in Game too...
   if (connectedToPort(G, company)) {
     return 3;
