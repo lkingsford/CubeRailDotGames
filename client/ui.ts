@@ -365,6 +365,12 @@ export class Ui {
                 narrowP.innerText = `${co.narrowGaugeRemaining} narrow gauge track remaining`;
                 contentDiv?.append(narrowP);
             }
+
+            if (co.resourcesHeld > 0) {
+                let resourcesHeldP = document.createElement("p")
+                resourcesHeldP.innerText = `${co.resourcesHeld} resource cubes held`;
+                contentDiv?.append(resourcesHeldP);
+            }
         });
 
         // Bonds

@@ -142,9 +142,24 @@ export const MAP: ITerrain[] = [
     secondCost: 10,
     revenue: (G: IEmuBayState, B: BuildMode) => {
       if (B == BuildMode.Normal) {
-        return 0;
+        if (!connectedToPort(G, G.toAct!))
+        {
+          // First connection to port = all resource cubes paying more
+          return firstPortConnectionRev(G, G.toAct!);
+        }
+        else
+        {
+          return 0;
+        }
       } else {
+        if (!connectedToPort(G, G.toAct!))
+        {
+          return firstPortConnectionRev(G, G.toAct!) + fixedNarrowRevenue;
+        }
+        else
+        {
         return fixedNarrowRevenue;
+        }
       }
     },
     textureIndex: 3,
@@ -337,6 +352,10 @@ export function resourceCubeRevenue(G: IEmuBayState, company: number): number {
   } else {
     return 1;
   }
+}
+
+function firstPortConnectionRev(G: IEmuBayState, company: number): number {
+  return G.companies[company].resourcesHeld * 2;
 }
 
 function connectedToPort(G: IEmuBayState, company: number): boolean {
@@ -974,6 +993,8 @@ export const EmuBayRailwayCompany = {
 
                 // Increase revenue
                 co.currentRevenue += resourceCubeRevenue(G, G.toAct!);
+
+                co.resourcesHeld += 1;
 
                 G.anyActionsTaken = true;
               },
