@@ -242,14 +242,7 @@ export const MAP: ITerrain[] = [
         let owned = G.track.filter((i) => i.owner == G.toAct)
         let biomes = owned.map((i) => getTileBiome(i))
         let towns = biomes.filter((i) => i?.biomeName == "Town")
-        let townRev = 0;
-        switch (towns.length) {
-          case 0: townRev = 2;
-          case 1: townRev = 4;
-          case 2: townRev = 6;
-          default:
-            townRev = 0; // Something went wrong
-        }
+        let townRev = [2,4,6][towns.length];
 
         // If first town, check if any farmland needs to increase
         let extraFarmRevenue = 0;
