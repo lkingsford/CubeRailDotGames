@@ -343,13 +343,13 @@ export class Ui {
             contentDiv?.appendChild(cashP);
 
             let revP = document.createElement("p");
-            revP.innerText = `Rev ${co.currentRevenue < 0 ? '-' : ''}₤${co.currentRevenue}`;
+            revP.innerText = `Rev ${co.currentRevenue < 0 ? '-' : ''}₤${Math.abs(co.currentRevenue)}`;
             revP.classList.add("cash");
             contentDiv?.appendChild(revP);
 
             if (co.sharesHeld.length != 0) {
                 let revsplitP = document.createElement("p");
-                revsplitP.innerText += ` (${co.currentRevenue < 0 ? '-' : ''}₤${co.currentRevenue > 0 ? Math.ceil(co.currentRevenue / co.sharesHeld.length) : Math.floor(co.currentRevenue / co.sharesHeld.length)} / share)`;
+                revsplitP.innerText += ` (${co.currentRevenue < 0 ? '-' : ''}₤${Math.ceil(Math.abs(co.currentRevenue) / co.sharesHeld.length)} / share)`;
                 contentDiv?.appendChild(revsplitP);
             }
 
