@@ -804,6 +804,7 @@ export const EmuBayRailwayCompany = {
                   return INVALID_MOVE;
                 };
                 G.companies[company].bonds.push(G.bonds[bond]);
+                G.companies[company].cash += G.bonds[bond].amount;
                 G.bonds.splice(bond, 1);
                 ctx.events?.endTurn!();
               },
