@@ -589,6 +589,7 @@ export function getMergableCompanies(G: IEmuBayState, ctx: Ctx): IMergable[] {
           // Already visited
           break;
         }
+        visited.push(Z);
         if (coTracks.find((i) => Z.x == i.x && Z.y == i.y) != undefined) {
           // Connected!
           return true;
