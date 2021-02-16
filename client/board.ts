@@ -143,6 +143,28 @@ export class Board extends State.State {
             });
         })
 
+        let labelStyle = new PIXI.TextStyle();
+        labelStyle.fill = "#222222";
+        labelStyle.fontWeight = "bold";
+        labelStyle.fontSize = 26;
+
+        MAP.forEach((terrain) => {
+            var texture = Board.tileTextures[terrain.textureIndex];
+            terrain.locations.forEach(xy => {
+               if (xy.label) { 
+                let labelSprite = new PIXI.Text(xy.label!)
+                    labelSprite.x = Board.TILE_WIDTH * xy.x + Board.OFFSET_X;
+                    labelSprite.y = Board.TILE_HEIGHT * xy.y
+                        + (xy.x % 2 == 0 ? Board.TILE_HEIGHT / 2 : 0)
+                        + (0.2 * Board.TILE_HEIGHT);
+                    labelSprite.anchor = new PIXI.Point(0.5, 0.5);
+                    labelSprite.style = labelStyle;
+                    this.terrain!.addChild(labelSprite);
+                this.terrain!.addChild(labelSprite);
+            }
+            });
+        });
+
         let stage = "nostage";
         if (ctx.activePlayers) {
             stage = ctx.activePlayers![+ctx.currentPlayer];
@@ -154,6 +176,7 @@ export class Board extends State.State {
         costStyle.strokeThickness = 4;
         costStyle.fontWeight = "bold";
         costStyle.fontSize = 38;
+
         let revStyle = new PIXI.TextStyle();
         revStyle.fill = "#00aa00";
         revStyle.stroke = "black";
