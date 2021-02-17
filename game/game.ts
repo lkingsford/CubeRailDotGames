@@ -78,7 +78,7 @@ export interface IEmuBayState {
   toAct?: CompanyID;
 };
 
-enum EndGameReason {
+export enum EndGameReason {
   quit,
   stalemate,
   bankruptcy

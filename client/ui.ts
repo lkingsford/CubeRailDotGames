@@ -2,7 +2,7 @@ import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
 import {
     getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond,
-    ICoordinates, getMergableCompanies, CompanyType, stalemateAvailable, getAllowedBuildSpaces, getTakeResourceSpaces} 
+    ICoordinates, getMergableCompanies, CompanyType, stalemateAvailable, getAllowedBuildSpaces, getTakeResourceSpaces, EndGameReason} 
     from "../game/game";
 import { BuildMode, Board } from "../client/board";
 
@@ -152,6 +152,7 @@ export class Ui {
                         actionDiv.classList.add("chooseableaction")
                     }
                 }
+
                 actionsDiv?.appendChild(actionDiv);
             });
 
@@ -166,6 +167,11 @@ export class Ui {
                     };
                 }
                 actionsDiv?.appendChild(undoDiv);
+            }
+
+
+            if (ctx.gameover) {
+                contentDiv?.append(this.gameOverPhase(gamestate, ctx));    
             }
 
             if (stage == "buildingTrack") {
@@ -788,5 +794,26 @@ export class Ui {
             takeResourcesExtraDiv.appendChild(choice);
         })
         return takeResourcesExtraDiv;
+    }
+
+    private gameOverPhase(gamestate: IEmuBayState, ctx: Ctx) {
+        let gameOverPhase = document.createElement("div");
+        gameOverPhase.classList.add("actionextra");
+
+        let dirH1 = document.createElement("h1");
+        dirH1.innerText = "GAME OVER";
+        gameOverPhase.appendChild(dirH1);
+
+        let reasons = ctx.gameover!.reasons!
+
+        let reasonsP = document.createElement("p");
+        reasonsP.innerText = "";
+        gameOverPhase.appendChild(reasonsP);
+
+        if (reasons.includes(EndGameReason.stalemate)) {
+            reasonsP.innerText += "Stalemate. There were no legal actions available."
+        }
+
+        return gameOverPhase;
     }
 }
