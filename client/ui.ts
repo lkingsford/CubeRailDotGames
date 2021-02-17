@@ -438,6 +438,7 @@ export class Ui {
             let outerDiv = document.querySelector(`#company${idx}`);
             let contentDiv = document.querySelector(`#company${idx} .card .content`);
             let cardDiv = document.querySelector(`#company${idx} .card`)
+            if (!co.open) { return }
             if (!outerDiv) {
                 outerDiv = document.createElement("div");
                 outerDiv.id = `company${idx}`;
@@ -460,13 +461,6 @@ export class Ui {
                 contentDiv.classList.add("content")
 
                 coRow!.appendChild(outerDiv);
-            }
-
-            if (co.open) {
-                outerDiv!.classList.remove("closed")
-            }
-            else {
-                outerDiv!.classList.add("closed")
             }
 
             contentDiv!.innerHTML = '';
