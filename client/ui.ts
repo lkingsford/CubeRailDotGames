@@ -35,14 +35,21 @@ export class Ui {
 
         // Action selector
         {
+            let row = document.querySelector(`#actionrow`);
             let outerDiv = document.querySelector(`#actions`);
             let contentDiv = document.querySelector(`#actions .card .content`);
             let cardDiv = document.querySelector(`#actions .card`)
             if (!outerDiv) {
+                row = document.createElement("div");
+                row.id = `actionrow`;
+                row.classList.add('row');
+                document.querySelector("#maingrid")?.appendChild(row);
+
                 outerDiv = document.createElement("div");
                 outerDiv.id = `actions`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
+                outerDiv.classList.add("twelve", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -56,7 +63,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.appendChild(outerDiv);
+                row.appendChild(outerDiv);
             }
 
             contentDiv!.innerHTML = '';
@@ -255,6 +262,14 @@ export class Ui {
             }
         }
 
+        let row2 = document.querySelector(`#row2`);
+        if (!row2) {
+                row2 = document.createElement("div");
+                row2.id = `row2`;
+                row2.classList.add('row');
+                document.querySelector("#maingrid")?.appendChild(row2);
+        }
+
         // Endgame tracker
         {
             let outerDiv = document.querySelector(`#endgame`);
@@ -265,6 +280,7 @@ export class Ui {
                 outerDiv.id = `endgame`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
+                outerDiv.classList.add("six", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -278,7 +294,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.appendChild(outerDiv);
+                row2.appendChild(outerDiv);
             }
 
             contentDiv!.innerHTML = "";
@@ -302,6 +318,51 @@ export class Ui {
             });
         };
 
+        
+        // Bonds
+        {
+            let outerDiv = document.querySelector(`#bonds`);
+            let contentDiv = document.querySelector(`#bonds .card .content`);
+            let cardDiv = document.querySelector(`#bonds .card`)
+            if (!outerDiv) {
+                outerDiv = document.createElement("div");
+                outerDiv.id = `bonds`;
+                document.querySelector("#maingrid")?.appendChild(outerDiv);
+                outerDiv.classList.add("six", "columns");
+                outerDiv.classList.add("item");
+
+                cardDiv = document.createElement("div");
+                outerDiv.appendChild(cardDiv);
+                cardDiv.classList.add("card");
+
+                let h = document.createElement("h1");
+                h.innerText = `Bonds Remaining`
+                cardDiv.appendChild(h);
+
+                contentDiv = document.createElement("div");
+                cardDiv.appendChild(contentDiv);
+                contentDiv.classList.add("content")
+
+                row2.appendChild(outerDiv);
+            };
+
+            contentDiv!.innerHTML = "";
+
+            gamestate.bonds.forEach((i) => {
+                let bondP = document.createElement("p");
+                bondP.innerText = this.bondToString(i, false);
+                contentDiv?.appendChild(bondP);
+            });
+        };
+
+        let playerRow = document.querySelector(`#playerrow`);
+        if (!playerRow) {
+                playerRow = document.createElement("div");
+                playerRow.id = `playerRow`;
+                playerRow.classList.add('row');
+                document.querySelector("#maingrid")?.appendChild(playerRow);
+        }
+
         // Player states
         gamestate.players.forEach((player, idx) => {
             let outerDiv = document.querySelector(`#player${idx}`);
@@ -312,6 +373,7 @@ export class Ui {
                 outerDiv.id = `player${idx}`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
+                outerDiv.classList.add("three", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -325,7 +387,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.appendChild(outerDiv);
+                playerRow!.appendChild(outerDiv);
             }
 
             if (idx == +ctx.currentPlayer) {
@@ -362,6 +424,14 @@ export class Ui {
             });
         });
 
+        let coRow = document.querySelector(`#corow`);
+        if (!coRow) {
+                coRow = document.createElement("div");
+                coRow.id = `coRow`;
+                coRow.classList.add('row');
+                document.querySelector("#maingrid")?.appendChild(coRow);
+        }
+
         gamestate.companies.forEach((co, idx) => {
             let outerDiv = document.querySelector(`#company${idx}`);
             let contentDiv = document.querySelector(`#company${idx} .card .content`);
@@ -372,6 +442,7 @@ export class Ui {
                 outerDiv.classList.add("companyCard");
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
+                outerDiv.classList.add("three", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -386,7 +457,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.appendChild(outerDiv);
+                coRow!.appendChild(outerDiv);
             }
 
             if (co.open) {
@@ -455,40 +526,6 @@ export class Ui {
             }
         });
 
-        // Bonds
-        {
-            let outerDiv = document.querySelector(`#bonds`);
-            let contentDiv = document.querySelector(`#bonds .card .content`);
-            let cardDiv = document.querySelector(`#bonds .card`)
-            if (!outerDiv) {
-                outerDiv = document.createElement("div");
-                outerDiv.id = `bonds`;
-                document.querySelector("#maingrid")?.appendChild(outerDiv);
-                outerDiv.classList.add("item");
-
-                cardDiv = document.createElement("div");
-                outerDiv.appendChild(cardDiv);
-                cardDiv.classList.add("card");
-
-                let h = document.createElement("h1");
-                h.innerText = `Bonds Remaining`
-                cardDiv.appendChild(h);
-
-                contentDiv = document.createElement("div");
-                cardDiv.appendChild(contentDiv);
-                contentDiv.classList.add("content")
-
-                grid.appendChild(outerDiv);
-            };
-
-            contentDiv!.innerHTML = "";
-
-            gamestate.bonds.forEach((i) => {
-                let bondP = document.createElement("p");
-                bondP.innerText = this.bondToString(i, false);
-                contentDiv?.appendChild(bondP);
-            });
-        };
     }
 
     // Clear the additional 'extra data' selector things from actions

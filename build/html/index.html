@@ -3,6 +3,8 @@
 <head>
   <title>Emu Bay Railway Company</title>
   <meta charset="utf-8" />
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
   <style>
     canvas {
       outline: none;
@@ -36,7 +38,6 @@
     .card {
       width: 100%;
       height: 100%;
-      flex: 1;
     }
 
     .card h1 {
@@ -177,10 +178,12 @@
 </script>
 <body>
   <div id="maingrid">
-  </div>
-    <div class="item" id="boarditem"><div class="card" id="boardcontent">
+  <div class="row">
+    <div class="item twelve columns" id="boarditem"><div class="card" id="boardcontent">
       <h1>Map</h1>
       <div class="content" id="board"></div>
     </div></div>
+  </div>
+  </div>
 </body>
 </html>
