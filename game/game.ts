@@ -585,16 +585,16 @@ export function getMergableCompanies(G: IEmuBayState, ctx: Ctx): IMergable[] {
       let toCheck = [minor.home];
       while (toCheck.length > 0) {
         var Z = toCheck.pop()!;
-        if (visited.find((i) => Z.x == i.x && Z.y == i.y) != undefined) {
+        if (visited.some((i) => Z.x == i.x && Z.y == i.y)) {
           // Already visited
-          break;
+          continue;
         }
         visited.push(Z);
-        if (coTracks.find((i) => Z.x == i.x && Z.y == i.y) != undefined) {
+        if (coTracks.some((i) => Z.x == i.x && Z.y == i.y)) {
           // Connected!
           return true;
         }
-        if (narrowTracks.find((i) => Z.x == i.x && Z.y == i.y) != undefined) {
+        if (narrowTracks.some((i) => Z.x == i.x && Z.y == i.y)) {
           toCheck.push(...getAdjacent(Z));
         }
       }
@@ -1066,6 +1066,10 @@ export const EmuBayRailwayCompany = {
               },
 
               merge: (G: IEmuBayState, ctx: Ctx, major: number, minor: number) => {
+                if (jiggleCubes(G, actions.Merge) == INVALID_MOVE) {
+                  return INVALID_MOVE;
+                };
+
                 if (getMergableCompanies(G, ctx).find((i) => i.major == major && i.minor == minor) == undefined) {
                   console.log("Merge is invalid")
                   return INVALID_MOVE;
