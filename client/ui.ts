@@ -2,7 +2,8 @@ import { Ctx } from "boardgame.io";
 import { Client } from "boardgame.io/dist/types/packages/client";
 import {
     getMinimumBid, IEmuBayState, actions, ACTION_CUBE_LOCATION_ACTIONS, IBond,
-    ICoordinates, getMergableCompanies, CompanyType, stalemateAvailable, getAllowedBuildSpaces, getTakeResourceSpaces, EndGameReason} 
+    ICoordinates, getMergableCompanies, CompanyType, stalemateAvailable, getAllowedBuildSpaces, getTakeResourceSpaces, EndGameReason, IEndgameState, activeEndGameConditions
+}
     from "../game/game";
 import { BuildMode, Board } from "../client/board";
 
@@ -14,9 +15,21 @@ const COMPANY_NAME = ["Emu Bay Railway Co.", "Tasmanian Main Line Railroad",
     "Launceston & Western", "Grubb's Tramway", "Mount Lyell Mining and Railway Co.",
     "North East Dundas Tramway", "North Mount Farrell"];
 const ACTIONS = ["Build track", "Auction Share", "Take Resource", "Issue Bond", "Merge Private", "Pay Dividend"];
+const END_GAME_REASON_TEXT = ["Player quit. ",
+    "Stalemate. There were no legal actions available. ",
+    "Bankruptcy. ",
+    "All non-reserved shares sold. ",
+    "2 or fewer remaining bonds. ",
+    "3 of 4 charters have no remaining track. ",
+    "3 or fewer resources remaining on board. "]
 
 export class Ui {
     private buildMode: BuildMode = BuildMode.Normal;
+
+    private static formatCash(cash: number): string {
+        return `${cash < 0 ? '-' : ''}₤${Math.abs(cash)}`;
+    }
+
     public update(gamestate: IEmuBayState, ctx: Ctx, client: any, board: Board): void {
         // Reset this on update, will set correctly during update
         board.tileClickedOn = undefined;
@@ -70,13 +83,12 @@ export class Ui {
                     break;
             }
 
-            if (stage == "removeCube" && stalemateAvailable(gamestate, ctx))
-            {
+            if (stage == "removeCube" && stalemateAvailable(gamestate, ctx)) {
                 let stalemateDiv = document.createElement("div");
                 stalemateDiv.innerText = "Declare Stalemate";
                 stalemateDiv.classList.add("chooseableaction");
                 stalemateDiv.classList.add("endgameable");
-                stalemateDiv.onclick = (ev)=>(client.moves.declareStalemate());
+                stalemateDiv.onclick = (ev) => (client.moves.declareStalemate());
                 contentDiv?.appendChild(stalemateDiv);
             }
 
@@ -171,7 +183,7 @@ export class Ui {
 
 
             if (ctx.gameover) {
-                contentDiv?.append(this.gameOverPhase(gamestate, ctx));    
+                contentDiv?.append(this.gameOverPhase(gamestate, ctx));
             }
 
             if (stage == "buildingTrack") {
@@ -202,7 +214,7 @@ export class Ui {
                 let playerCash = gamestate.players[+ctx.currentPlayer].cash;
 
                 let playerH2 = document.createElement("h2");
-                playerH2.innerText = `Player ${ctx.currentPlayer} (₤${playerCash})`;
+                playerH2.innerText = `Player ${ctx.currentPlayer} (${Ui.formatCash(playerCash)})`;
                 contentDiv?.append(playerH2);
 
                 let statusP = document.createElement("p");
@@ -247,6 +259,53 @@ export class Ui {
             }
         }
 
+        // Endgame tracker
+        {
+            let outerDiv = document.querySelector(`#endgame`);
+            let contentDiv = document.querySelector(`#endgame .card .content`);
+            let cardDiv = document.querySelector(`#endgame .card`)
+            if (!outerDiv) {
+                outerDiv = document.createElement("div");
+                outerDiv.id = `endgame`;
+                document.querySelector("#maingrid")?.appendChild(outerDiv);
+                outerDiv.classList.add("item");
+
+                cardDiv = document.createElement("div");
+                outerDiv.appendChild(cardDiv);
+                cardDiv.classList.add("card");
+
+                let h = document.createElement("h1");
+                h.innerText = `Endgame Conditions`
+                cardDiv.appendChild(h);
+
+                contentDiv = document.createElement("div");
+                cardDiv.appendChild(contentDiv);
+                contentDiv.classList.add("content")
+
+                grid.add(outerDiv);
+            }
+
+            contentDiv!.innerHTML = "";
+
+            let descriptionP = document.createElement("p");
+            descriptionP.innerText = "When 2 of these conditions are met, the game will end after dividends are next paid out.";
+            contentDiv?.appendChild(descriptionP);
+
+            let conditionsUl = document.createElement("ul");
+            contentDiv?.appendChild(conditionsUl);
+
+            let activeConditions = activeEndGameConditions(gamestate);
+
+            END_GAME_REASON_TEXT.slice(3).forEach((i, idx) => {
+                let conditionLi = document.createElement("li");
+                conditionLi.innerText = i;
+                if (activeConditions.includes(idx + 3)) {
+                    conditionLi.classList.add("activecondition")
+                }
+                conditionsUl.appendChild(conditionLi);
+            });
+        };
+
         // Player states
         gamestate.players.forEach((player, idx) => {
             let outerDiv = document.querySelector(`#player${idx}`);
@@ -284,7 +343,7 @@ export class Ui {
             contentDiv!.innerHTML = '';
 
             let cashP = document.createElement("p");
-            cashP.innerText = `Cash ₤${player.cash}`;
+            cashP.innerText = `Cash ${Ui.formatCash(player.cash)}`;
             cashP.classList.add("cash");
             contentDiv?.appendChild(cashP);
 
@@ -337,25 +396,24 @@ export class Ui {
             if (co.open) {
                 outerDiv!.classList.remove("closed")
             }
-            else
-            {
+            else {
                 outerDiv!.classList.add("closed")
             }
 
             contentDiv!.innerHTML = '';
             let cashP = document.createElement("p");
-            cashP.innerText = `Cash ₤${co.cash}`;
+            cashP.innerText = `Cash ${Ui.formatCash(co.cash)}`;
             cashP.classList.add("cash");
             contentDiv?.appendChild(cashP);
 
             let revP = document.createElement("p");
-            revP.innerText = `Rev ${co.currentRevenue < 0 ? '-' : ''}₤${Math.abs(co.currentRevenue)}`;
+            revP.innerText = `Rev ${Ui.formatCash(Math.abs(co.currentRevenue))}`;
             revP.classList.add("cash");
             contentDiv?.appendChild(revP);
 
             if (co.sharesHeld.length != 0) {
                 let revsplitP = document.createElement("p");
-                revsplitP.innerText += ` (${co.currentRevenue < 0 ? '-' : ''}₤${Math.ceil(Math.abs(co.currentRevenue) / co.sharesHeld.length)} / share)`;
+                revsplitP.innerText += ` (${Ui.formatCash(Math.ceil(Math.abs(co.currentRevenue) / co.sharesHeld.length))} / share)`;
                 contentDiv?.appendChild(revsplitP);
             }
 
@@ -572,7 +630,7 @@ export class Ui {
         let available = gamestate.companies.map((v, i) => ({ value: v, idx: i }))
             .filter((c) => {
                 if (c.value.trainsRemaining == 0 && c.value.narrowGaugeRemaining == 0) { return false };
-                if ((getAllowedBuildSpaces(gamestate, BuildMode.Narrow, c.idx).length + 
+                if ((getAllowedBuildSpaces(gamestate, BuildMode.Narrow, c.idx).length +
                     getAllowedBuildSpaces(gamestate, BuildMode.Normal, c.idx).length) == 0) {
                     return false;
                 }
@@ -615,7 +673,7 @@ export class Ui {
 
         {
             let cashP = document.createElement("p")
-            cashP.innerText = `₤${co.cash} - ${gamestate.buildsRemaining} builds remaining`;
+            cashP.innerText = `${Ui.formatCash(co.cash)} - ${gamestate.buildsRemaining} builds remaining`;
             stageDiv?.append(cashP);
         }
 
@@ -740,7 +798,7 @@ export class Ui {
 
         {
             let cashP = document.createElement("p")
-            cashP.innerText = `₤${co.cash}`;
+            cashP.innerText = `${Ui.formatCash(co.cash)}`;
             takeResourcesStageDiv?.append(cashP);
         }
         if (gamestate.anyActionsTaken) {
@@ -784,7 +842,7 @@ export class Ui {
             minorP.classList.add(COMPANY_ABBREV[i.minor]);
             minorP.innerText = COMPANY_NAME[i.minor];
             choice.appendChild(minorP);
-            
+
             choice.onclick = (cop_ev) => {
                 let element = (cop_ev.currentTarget as HTMLElement)
                 let major = +element!.dataset!.major!;
@@ -804,15 +862,44 @@ export class Ui {
         dirH1.innerText = "GAME OVER";
         gameOverPhase.appendChild(dirH1);
 
-        let reasons = ctx.gameover!.reasons!
+        let gameover: IEndgameState = ctx.gameover!;
+
+        let winnerP = document.createElement("p");
+        winnerP.classList.add("winner");
+        switch (gameover.winner.length) {
+            case 0:
+                winnerP.innerText = "No winners! (All bankrupt)";
+                break;
+            case 2:
+                winnerP.innerText = `Won by players ${gameover.winner.join(",")}`;
+                break;
+            case 1:
+                winnerP.innerText = `Won by player ${gameover.winner[0]}`;
+                break;
+        }
+        gameOverPhase.appendChild(winnerP);
+
+        let scoresUl = document.createElement("ul");
+        scoresUl.classList.add("scores");
+        gameOverPhase.appendChild(scoresUl);
+
+        gameover.scores.forEach((i) => {
+            let scoreLi = document.createElement("li");
+            scoreLi.innerText = `Player ${i.player}: ${Ui.formatCash(i.cash)}`;
+            scoresUl.appendChild(scoreLi);
+        })
+
+        let reasons = gameover.reasons!
 
         let reasonsP = document.createElement("p");
         reasonsP.innerText = "";
         gameOverPhase.appendChild(reasonsP);
 
-        if (reasons.includes(EndGameReason.stalemate)) {
-            reasonsP.innerText += "Stalemate. There were no legal actions available."
-        }
+        reasonsP.innerText =
+            reasons.map((i) => {
+                return END_GAME_REASON_TEXT[i];
+            }).join("");
+
 
         return gameOverPhase;
     }

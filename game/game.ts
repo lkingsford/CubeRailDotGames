@@ -81,10 +81,16 @@ export interface IEmuBayState {
 export enum EndGameReason {
   quit,
   stalemate,
-  bankruptcy
+  bankruptcy,
+  shares,
+  bonds,
+  track,
+  resource
 }
 export interface IEndgameState {
   reasons: EndGameReason[];
+  scores: { player: number, cash: number }[];
+  winner: number[];
 }
 export interface ILocation extends ICoordinates {
   label?: string;
@@ -832,8 +838,44 @@ export function stalemateAvailable(G: IEmuBayState, ctx: Ctx): boolean {
   return !anyAvailable;
 }
 
-function getEndgameState(G: IEmuBayState, reason: EndGameReason): IEndgameState {
-  return { reasons: [reason] }
+function getEndgameState(G: IEmuBayState, reason: EndGameReason[]): IEndgameState {
+  let sortedScores = G.players.map((i, idx) => ({ player: idx, cash: i.cash }))
+    .sort((a, b) => b.cash - a.cash);
+  let winners: number[] = [];
+  if (sortedScores[0].cash >= 0) {
+    // If all negative, NO WINNER!
+    // This filter is to allow draws
+    winners = sortedScores.filter((i) => i.cash == sortedScores[0].cash).map((i) => i.player);
+  }
+  return { reasons: reason, scores: sortedScores, winner: winners }
+}
+
+export function activeEndGameConditions(G: IEmuBayState): EndGameReason[] {
+  let reasons: EndGameReason[] = []
+
+  if (G.companies.every((i) => i.sharesRemaining == 0)) {
+    reasons.push(EndGameReason.shares);
+  }
+
+  if (G.bonds.length <= 2) {
+    reasons.push(EndGameReason.bonds);
+  }
+
+  var majorsWithoutTrack = G.companies.filter((i) => i.companyType == CompanyType.Major)
+    .filter((i) => (i.trainsRemaining + i.narrowGaugeRemaining) == 0)
+    .length;
+  var minorHasNoTrack = G.companies.filter((i)=>i.companyType == CompanyType.Minor)
+  .reduce<number>((last, i)=>last + i.narrowGaugeRemaining, 0) == 0;
+  var chartersWithoutTrack = majorsWithoutTrack + (minorHasNoTrack ? 1 : 0);
+  if (chartersWithoutTrack >= 3) {
+    reasons.push(EndGameReason.track);
+  }
+  
+  if (G.resourceCubes.length <= 3) {
+    reasons.push(EndGameReason.resource);
+  }
+
+  return reasons;
 }
 
 // TODO: Detect when there is a stalemate
@@ -999,7 +1041,7 @@ export const EmuBayRailwayCompany = {
 
               declareStalemate: (G: IEmuBayState, ctx: Ctx) => {
                 if (stalemateAvailable(G, ctx)) {
-                  ctx.events!.endGame!(getEndgameState(G, EndGameReason.stalemate));
+                  ctx.events!.endGame!(getEndgameState(G, [EndGameReason.stalemate]));
                 }
                 var availableSpaces = ACTION_CUBE_LOCATION_ACTIONS.map((v, i) => ({ value: v, idx: i }))
                   .filter(v => G.actionCubeLocations[v.idx] == false);
@@ -1119,7 +1161,7 @@ export const EmuBayRailwayCompany = {
                   co.currentRevenue -= debtChange;
                   console.log(co, " revenue reduced by ", debtChange)
 
-                  // Increase debt for each defferd
+                  // Increase debt for each deferred
                   co.bonds.filter((i) => i.deferred).forEach((i) => {
                     co.currentRevenue -= i.baseInterest;
                     console.log(co, " revenue reduced by ", i.baseInterest, " following undefferal")
@@ -1127,7 +1169,17 @@ export const EmuBayRailwayCompany = {
                   });
                 })
 
-                // TODO: Check for victory (or loss!)
+                // Check for bankruptcy
+                if (G.players.some((i) => i.cash < 0)) {
+                  ctx.events?.endGame!(getEndgameState(G, [EndGameReason.bankruptcy]));
+                }
+
+                // Check for other end game conditions
+                let reasons: EndGameReason[] = activeEndGameConditions(G);
+                if (reasons.length >= 2) {
+                  ctx.events?.endGame!(getEndgameState(G, reasons));
+                }
+
                 ctx.events?.endTurn!();
               },
             },
