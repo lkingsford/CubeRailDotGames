@@ -33,6 +33,8 @@ export class Ui {
         // Reset this on update, will set correctly during update
         board.tileClickedOn = undefined;
 
+        let boardElement = document.querySelector("#boardrow")!;
+
         // Action selector
         {
             let row = document.querySelector(`#actionrow`);
@@ -43,13 +45,13 @@ export class Ui {
                 row = document.createElement("div");
                 row.id = `actionrow`;
                 row.classList.add('row');
-                document.querySelector("#maingrid")?.appendChild(row);
+                document.querySelector("#maingrid")?.insertBefore(row, boardElement);
 
                 outerDiv = document.createElement("div");
                 outerDiv.id = `actions`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
-                outerDiv.classList.add("twelve", "columns");
+                outerDiv.classList.add("six", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -267,7 +269,7 @@ export class Ui {
                 row2 = document.createElement("div");
                 row2.id = `row2`;
                 row2.classList.add('row');
-                document.querySelector("#maingrid")?.appendChild(row2);
+                document.querySelector("#maingrid")?.insertBefore(row2, boardElement);
         }
 
         // Endgame tracker
@@ -360,7 +362,7 @@ export class Ui {
                 playerRow = document.createElement("div");
                 playerRow.id = `playerRow`;
                 playerRow.classList.add('row');
-                document.querySelector("#maingrid")?.appendChild(playerRow);
+                document.querySelector("#maingrid")?.insertBefore(playerRow, boardElement);
         }
 
         // Player states
@@ -429,7 +431,7 @@ export class Ui {
                 coRow = document.createElement("div");
                 coRow.id = `coRow`;
                 coRow.classList.add('row');
-                document.querySelector("#maingrid")?.appendChild(coRow);
+                document.querySelector("#maingrid")?.insertBefore(coRow, boardElement);
         }
 
         gamestate.companies.forEach((co, idx) => {
