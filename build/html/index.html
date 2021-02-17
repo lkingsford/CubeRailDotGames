@@ -9,11 +9,11 @@
     }
 
     .grid {
-      position: relative;
+      display: flex;
     }
+
     .item {
       display: block;
-      position: absolute;
       min-width: 200px;
       margin: 5px;
       z-index: 1;
@@ -34,9 +34,9 @@
     }
 
     .card {
-      position: relative;
       width: 100%;
       height: 100%;
+      flex: 1;
     }
 
     .card h1 {
@@ -85,6 +85,10 @@
     .activecondition {
       text-decoration: line-through;
       color: red;
+    }
+
+    .container {
+      display: flex;
     }
 
     .companyCard {
@@ -173,10 +177,10 @@
 </script>
 <body>
   <div id="maingrid">
+  </div>
     <div class="item" id="boarditem"><div class="card" id="boardcontent">
       <h1>Map</h1>
       <div class="content" id="board"></div>
     </div></div>
-  </div>
 </body>
 </html>

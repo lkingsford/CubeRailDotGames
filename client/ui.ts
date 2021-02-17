@@ -7,8 +7,7 @@ import {
     from "../game/game";
 import { BuildMode, Board } from "../client/board";
 
-const muuri = require("muuri/dist/muuri")
-var grid = new muuri("#maingrid", { dragEnabled: true, layout: {} });
+var grid = document.querySelector("#maingrid")!;
 
 const COMPANY_ABBREV = ["EBR", "TMLC", "LW", "GT", "MLM", "NED", "NMF"]
 const COMPANY_NAME = ["Emu Bay Railway Co.", "Tasmanian Main Line Railroad",
@@ -57,7 +56,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.add(outerDiv);
+                grid.appendChild(outerDiv);
             }
 
             contentDiv!.innerHTML = '';
@@ -148,9 +147,6 @@ export class Ui {
                                 client.moves.payDividends();
                         }
                     }
-
-                    grid.refreshItems();
-                    grid.layout();
                 }
 
                 if (stage == "removeCube") {
@@ -282,7 +278,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.add(outerDiv);
+                grid.appendChild(outerDiv);
             }
 
             contentDiv!.innerHTML = "";
@@ -329,7 +325,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.add(outerDiv);
+                grid.appendChild(outerDiv);
             }
 
             if (idx == +ctx.currentPlayer) {
@@ -390,7 +386,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.add(outerDiv);
+                grid.appendChild(outerDiv);
             }
 
             if (co.open) {
@@ -482,7 +478,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                grid.add(outerDiv);
+                grid.appendChild(outerDiv);
             };
 
             contentDiv!.innerHTML = "";
@@ -493,13 +489,6 @@ export class Ui {
                 contentDiv?.appendChild(bondP);
             });
         };
-
-        // Map always at bottom
-        grid.move(document.querySelector("#boarditem"), -1);
-
-        // Size may have changed - rearrange them
-        grid.refreshItems();
-        grid.layout();
     }
 
     // Clear the additional 'extra data' selector things from actions
@@ -579,15 +568,11 @@ export class Ui {
                     element.classList.remove("chooseableaction")
                     element.onclick = null;
                     issueBondExtraDiv.appendChild(this.issueBondExtra2(gamestate, ctx, client, co));
-                    grid.refreshItems();
-                    grid.layout();
                 }
                 issueBondExtraDiv.appendChild(coP);
             })
         }
 
-        grid.refreshItems();
-        grid.layout();
 
         return issueBondExtraDiv;
     }

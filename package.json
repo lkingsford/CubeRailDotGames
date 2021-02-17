@@ -26,7 +26,6 @@
     "koa": "^2.13.1",
     "koa-static": "^5.0.0",
     "masonry-layout": "^4.2.2",
-    "muuri": "^0.9.3",
     "pixi.js": "^5.3.7"
   },
   "devDependencies": {
