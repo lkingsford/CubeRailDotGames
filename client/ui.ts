@@ -51,7 +51,7 @@ export class Ui {
                 outerDiv.id = `actions`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
-                outerDiv.classList.add("six", "columns");
+                outerDiv.classList.add("twelve", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -282,7 +282,7 @@ export class Ui {
                 outerDiv.id = `endgame`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
-                outerDiv.classList.add("six", "columns");
+                outerDiv.classList.add("three", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -330,7 +330,7 @@ export class Ui {
                 outerDiv = document.createElement("div");
                 outerDiv.id = `bonds`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
-                outerDiv.classList.add("six", "columns");
+                outerDiv.classList.add("three", "columns");
                 outerDiv.classList.add("item");
 
                 cardDiv = document.createElement("div");
@@ -357,14 +357,6 @@ export class Ui {
             });
         };
 
-        let playerRow = document.querySelector(`#playerrow`);
-        if (!playerRow) {
-                playerRow = document.createElement("div");
-                playerRow.id = `playerRow`;
-                playerRow.classList.add('row');
-                document.querySelector("#maingrid")?.insertBefore(playerRow, boardElement);
-        }
-
         // Player states
         gamestate.players.forEach((player, idx) => {
             let outerDiv = document.querySelector(`#player${idx}`);
@@ -375,7 +367,7 @@ export class Ui {
                 outerDiv.id = `player${idx}`;
                 document.querySelector("#maingrid")?.appendChild(outerDiv);
                 outerDiv.classList.add("item");
-                outerDiv.classList.add("three", "columns");
+                outerDiv.classList.add("two", "columns");
 
                 cardDiv = document.createElement("div");
                 outerDiv.appendChild(cardDiv);
@@ -389,7 +381,7 @@ export class Ui {
                 cardDiv.appendChild(contentDiv);
                 contentDiv.classList.add("content")
 
-                playerRow!.appendChild(outerDiv);
+                row2!.appendChild(outerDiv);
             }
 
             if (idx == +ctx.currentPlayer) {
