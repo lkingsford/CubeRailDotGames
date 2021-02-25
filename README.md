@@ -1,4 +1,8 @@
-EMU BAY RAILWAY COMPANY
+CUBE RAIL DOT GAMES
 -----------------------
 
-Source is available, but this is not free for reuse at this time. Copyright is retained by Lachlan Kingsford.
+This is the server for cuberail.games.
+
+It is being programmed to be a generic server for boardgame.io games.
+
+Details of how to add games will be added.

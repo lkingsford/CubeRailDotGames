@@ -2,7 +2,6 @@ version: "3"
 services:
     db:
         build: ./db
-        container_name: db
         restart: always
         ports:
             - "5432:5432"
@@ -27,11 +26,11 @@ services:
         build: dev
         user: node
         volumes:
-            - ./:/home/node/app
+            - ./:/home/node/cuberailserver
             - /var/run/docker.sock:/var/run/docker-host.sock
+            - ~/.ssh:/home/node/.ssh:ro
         ports:
-            - "3000:3000"
-            - "3500:3500"
+            - "2230:2230"
         environment:
             - DB=postgres://train:choochoo@db:5432/train
         dns:
