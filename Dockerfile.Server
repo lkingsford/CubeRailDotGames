@@ -1,0 +1,2 @@
+FROM node:15.10
+RUN mkdir /home/node/game_server

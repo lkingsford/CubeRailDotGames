@@ -1,0 +1,48 @@
+version: "3"
+services:
+  db:
+    build: ./db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=train
+      - POSTGRES_PASSWORD=choochoo
+      - POSTGRES_DB=train
+    volumes:
+      - /var/lib/postgresql/data
+
+  pgadmin4:
+    build: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: thelochok@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: bob
+    ports:
+      - "2229:80"
+    volumes:
+      - /var/lib/pgadmin
+
+  game_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.Server
+    environment:
+      NODE_ENV: production
+      DB: postgres://train:choochoo@db:5432/train
+    volumes:
+      - ./package.json:/home/node/game_server/package.json:ro
+      - ./package-lock.json:/home/node/game_server/package-lock.json:ro
+      - ./dist:/home/node/game_server/dist:ro
+    working_dir: /home/node/game_server
+    entrypoint: "npm start"
+    dns:
+      - 208.67.222.222
+      - 127.0.0.11
+
+  nginx:
+    image: nginx:1.19
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/etc_nginx:/etc/nginx:ro
+      - ./dist-client:/var/www/clients
