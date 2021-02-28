@@ -35,6 +35,8 @@ services:
       - ./dist:/home/node/game_server/dist:ro
     working_dir: /home/node/game_server
     entrypoint: "npm start"
+    expose:
+      - "2230"
     dns:
       - 208.67.222.222
       - 127.0.0.11
