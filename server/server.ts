@@ -24,12 +24,18 @@ async function registerEndpoints() {
     // This might be better datadriven, but keeping this until amount of pages is untenable
     var indexCompiled = Handlebars.compile((await Fs.readFile("templates/index.hbs")).toString());
     router.get("/", async (ctx: Koa.Context) => {
-        ctx.body = indexCompiled({name: ctx.request.ip});
+        ctx.body = indexCompiled({ name: ctx.request.ip });
     });
 }
 
+async function registerPartials() {
+    Handlebars.registerPartial('main', await (await Fs.readFile("templates/main.hbs")).toString());
+}
+
 function main() {
-    registerEndpoints()
-    .then(server.run(PORT))
-    .catch((e)=>console.log(e));
+    registerPartials().then(() => {
+        registerEndpoints()
+    })
+        .then(server.run(PORT))
+        .catch((e) => console.log(e));
 }

@@ -33,6 +33,7 @@ services:
       - ./package.json:/home/node/game_server/package.json:ro
       - ./package-lock.json:/home/node/game_server/package-lock.json:ro
       - ./dist:/home/node/game_server/dist:ro
+      - ./templates:/home/node/game_server/templates:ro
     working_dir: /home/node/game_server
     entrypoint: "npm start"
     expose:
@@ -45,7 +46,9 @@ services:
     image: nginx:1.19
     ports:
       - "80:80"
+    environment:
+      SERVER_IMAGE: game_server
     volumes:
-      - ./nginx/etc_nginx:/etc/nginx:ro
+      - ./nginx/etc_nginx/templates:/etc/nginx/templates:ro
       - ./dist-client:/var/www/clients:ro
       - ./static:/var/www/static:ro
