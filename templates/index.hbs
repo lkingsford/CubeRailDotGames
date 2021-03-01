@@ -1,1 +1,8 @@
-Hello, {{name}}!
+{{#> main}}
+    {{#*inline "title"}}
+    Title, buggerit
+    {{/inline}}
+    {{#*inline "content"}}
+    Hello, {{name}}!
+    {{/inline}}
+{{/main}}

@@ -29,8 +29,8 @@ services:
             - ./:/home/node/cuberailserver
             - /var/run/docker.sock:/var/run/docker-host.sock
             - ~/.ssh:/home/node/.ssh:ro
-        ports:
-            - "2230:2230"
+        expose:
+            - "2230"
         environment: 
             DB: postgres://train:choochoo@db:5432/train
             NODE_ENV: development
@@ -42,7 +42,10 @@ services:
         image: nginx:1.19
         ports:
         - "80:80"
+        environment:
+            SERVER_IMAGE: dev
         volumes:
-        - ./nginx/etc_nginx:/etc/nginx:ro
+        - ./nginx/etc_nginx/templates:/etc/nginx/templates:ro
         - ./dist-client:/var/www/clients:ro
+        - ./static:/var/www/static:ro
 
