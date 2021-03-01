@@ -31,8 +31,18 @@ services:
             - ~/.ssh:/home/node/.ssh:ro
         ports:
             - "2230:2230"
+        environment: 
+            DB: postgres://train:choochoo@db:5432/train
+            NODE_ENV: development
         dns:
             - 208.67.222.222
             - 127.0.0.11
 
+    nginx:
+        image: nginx:1.19
+        ports:
+        - "80:80"
+        volumes:
+        - ./nginx/etc_nginx:/etc/nginx:ro
+        - ./dist-client:/var/www/clients:ro
 

@@ -47,4 +47,5 @@ services:
       - "80:80"
     volumes:
       - ./nginx/etc_nginx:/etc/nginx:ro
-      - ./dist-client:/var/www/clients
+      - ./dist-client:/var/www/clients:ro
+      - ./static:/var/www/static:ro
