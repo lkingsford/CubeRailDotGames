@@ -15,7 +15,9 @@
   <div class="container">
     <div class="row">
       <div class="twelve columns">
-        <img src="static/img/logo1.svg" />
+        <a href="/">
+          <img src="static/img/logo1.svg" />
+        </a>
       </div>
     </div>
     <div class="row">
@@ -24,7 +26,9 @@
         Logged in as {{username}}
       </div>
       {{else}}
-      <div class="eight columns"><p/></div>
+      <div class="eight columns">
+        <p />
+      </div>
       <div class="two columns">
         <a href="newuser">Register</a>
       </div>
@@ -33,12 +37,12 @@
       </div>
       {{/if}}
     </div>
-  {{> content }}
+    {{> content }}
   </div>
 </body>
 
 <script src="static/js/cuberail.js"></script>
 <link rel="preconnect" href="https://fonts.gstatic.com">
-<link href="https://fonts.googleapis.com/css2?family=Cantora+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300&family=Cantora+One&display=swap" rel="stylesheet">
 
 </html>
