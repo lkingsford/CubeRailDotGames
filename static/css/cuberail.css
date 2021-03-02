@@ -1,0 +1,26 @@
+h1, h2, h3 {
+    font-family: 'Cantora One', serif;
+    font-weight: 400;
+}
+
+h1 {
+    font-size: 3em;
+    color: #594757;
+}
+
+h2 {
+    font-size: 2.5em;
+    color: #B583A0;
+}
+
+a {
+    color: #594757;
+}
+
+a:visited {
+    color: #B583A0;
+}
+
+a:hover {
+    font-weight: 400;
+}
