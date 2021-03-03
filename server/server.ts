@@ -10,6 +10,9 @@ import * as Fs from 'fs/promises';
 import { Session as DbSession } from './db/session'
 import { User, UserCreateResult } from './db/user'
 
+// Not using types due to the types being older versions of Koa
+const passport = require('koa-passport');
+
 const db = new PostgresStore(process.env['DB']!);
 const PORT = 2230;
 const server = Server({ games: games, db })
@@ -35,6 +38,12 @@ async function registerEndpoints() {
     router.get("/newuser", async (ctx: Koa.Context) => {
         ctx.body = newuserCompiled({ name: ctx.session!.username || "No idea who ", loggedin: false });
     });
+    
+    var loginCompiled = Handlebars.compile((await Fs.readFile("templates/login.hbs")).toString());
+    router.get("/login", async (ctx: Koa.Context) => {
+        ctx.body = loginCompiled({ loggedin: false });
+    });
+    router.post("/login_user", koaBody(), postLogin);
 
     router.put("/register_user", koaBody(), putRegister);
 }
@@ -45,7 +54,11 @@ async function putRegister(ctx: Koa.Context) {
     switch (result) {
         case UserCreateResult.badPassword:
             ctx.response.status = 400;
-            ctx.response.body = "Invalid password - must be > 8 characters";
+            ctx.response.body = "Invalid password - must be >8 characters";
+            break;
+        case UserCreateResult.badUsername:
+            ctx.response.status = 400;
+            ctx.response.body = "Invalid username - must be >0 characters";
             break;
         case UserCreateResult.success:
             ctx.response.status = 200;
@@ -54,6 +67,24 @@ async function putRegister(ctx: Koa.Context) {
             ctx.response.status = 400;
             ctx.response.body = "User already exists"
     }
+}
+
+async function postLogin(ctx: Koa.Context) {
+    return passport.authenticate('local', (err: any, user: User, info: any, status: any) => {
+        if (err) {
+            console.log('error logging in')
+            ctx.status = 400
+        }
+        if (user) {
+            console.log(`${user.username} logged in.`)
+            ctx.login(user)
+            ctx.session!.role = {role: user.role}
+            ctx.status = 200
+        } else {
+            ctx.status = 400
+            ctx.response.body = "Incorrect username or password"
+        }
+    })(ctx);
 }
 
 async function registerPartials() {
@@ -78,6 +109,8 @@ function main() {
     }
     server.app.keys = [APP_KEY];
     server.app.use(session(session_config, server.app));
+    server.app.use(passport.initialize());
+    server.app.use(passport.session());
 
     registerPartials().then(() => {
         registerEndpoints()
