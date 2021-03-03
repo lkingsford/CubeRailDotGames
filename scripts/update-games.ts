@@ -48,10 +48,10 @@ async function extractGameTs(game: IGameDefinition) {
 async function generateGameslistTs(games: IGameDefinition[]) {
     console.log("Generating games.ts")
     var output: string = "";
-    output += games.map((i) => `import { ${i.object} } from "./${i.gameid}"`)
+    output += games.map((i,idx) => `import { ${i.object} as ${i.object}_${idx} } from "./${i.gameid}"`)
         .join("\n")
     output += "\n";
-    output += `const games = [${games.map(i => i.object).join(', ')}];\n`;
+    output += `const games = [${games.map((i, idx) => `${i.object}_${idx}`).join(', ')}];\n`
     output += `export default games`;
     await fsx.writeFile(path.join(gamefiles, "games.ts"), output);
 }
