@@ -34,6 +34,7 @@ services:
         environment: 
             DB: postgres://train:choochoo@db:5432/train
             NODE_ENV: development
+            COOKIE_KEY: cuberail.dev
         dns:
             - 208.67.222.222
             - 127.0.0.11

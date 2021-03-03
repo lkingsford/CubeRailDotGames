@@ -9,7 +9,7 @@ function createaccount() {
             window.location.replace("/");
         }
         else if (this.readyState == 4 && this.status != 200) {
-            statusElement.innerHTML = `Failed (${this.status})`;
+            statusElement.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
         }
     }
     request.open("put", "/register_user", true);

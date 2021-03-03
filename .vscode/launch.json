@@ -5,8 +5,8 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "command": "npm run-script serve",
-            "name": "Run serve",
+            "command": "npm run-script start-dev",
+            "name": "Run start-dev",
             "request": "launch",
             "type": "node-terminal",
             "outFiles": [
