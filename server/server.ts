@@ -24,24 +24,36 @@ main();
 
 async function registerEndpoints() {
     var router: KoaRouter = server.router;
-    router.get("/hello", async (ctx: Koa.Context) => {
-        ctx.body = "ROCK YA BODY";
-    });
 
     // This might be better datadriven, but keeping this until amount of pages is untenable
-    var indexCompiled = Handlebars.compile((await Fs.readFile("templates/index.hbs")).toString());
+    var aboutCompiled = Handlebars.compile((await Fs.readFile("templates/about.hbs")).toString());
+    var lobbyCompiled = Handlebars.compile((await Fs.readFile("templates/lobby.hbs")).toString());
     router.get("/", async (ctx: Koa.Context) => {
-        ctx.body = indexCompiled({ name: ctx.request.ip, loggedin: false });
+        if (!ctx.isAuthenticated()) {
+            ctx.body = aboutCompiled({ username: ctx.state?.user?.username, loggedin: ctx.isAuthenticated() });
+        }
+        else {
+            ctx.body = lobbyCompiled({ username: ctx.state?.user?.username, loggedin: ctx.isAuthenticated() });
+        }
+    });
+
+    router.get("/about", async (ctx: Koa.Context) => {
+        ctx.body = aboutCompiled({ username: ctx.state?.user?.username, loggedin: ctx.isAuthenticated() });
     });
 
     var newuserCompiled = Handlebars.compile((await Fs.readFile("templates/newuser.hbs")).toString());
     router.get("/newuser", async (ctx: Koa.Context) => {
-        ctx.body = newuserCompiled({ name: ctx.session!.username || "No idea who ", loggedin: false });
+        ctx.body = newuserCompiled({});
     });
-    
+
+    router.get("/logout", async (ctx: Koa.Context) => {
+        ctx.logout();
+        ctx.redirect('/');
+    });
+
     var loginCompiled = Handlebars.compile((await Fs.readFile("templates/login.hbs")).toString());
     router.get("/login", async (ctx: Koa.Context) => {
-        ctx.body = loginCompiled({ loggedin: false });
+        ctx.body = loginCompiled({});
     });
     router.post("/login_user", koaBody(), postLogin);
 
@@ -78,7 +90,7 @@ async function postLogin(ctx: Koa.Context) {
         if (user) {
             console.log(`${user.username} logged in.`)
             ctx.login(user)
-            ctx.session!.role = {role: user.role}
+            ctx.session!.role = { role: user.role }
             ctx.status = 200
         } else {
             ctx.status = 400
