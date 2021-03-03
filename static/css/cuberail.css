@@ -34,3 +34,7 @@ a:hover {
 .warning {
     color: #FF4444;
 }
+
+select {
+    padding: 0px 10px;
+}

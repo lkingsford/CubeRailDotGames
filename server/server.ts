@@ -9,16 +9,29 @@ import games from '../games/games';
 import * as Fs from 'fs/promises';
 import { Session as DbSession } from './db/session'
 import { User, UserCreateResult } from './db/user'
+import { IGameDefinition } from './IGameDefinition';
 
 // Not using types due to the types being older versions of Koa
 const passport = require('koa-passport');
 
+
+// Use the player ID as the credentials
+const generateCredentials = (ctx: Koa.DefaultContext): string => {
+    if (ctx.isAuthenticated()) {
+        return ctx.state?.user?.user_id;
+    } else {
+        throw new Error('user is not logged in')
+    }
+}
+
+
 const db = new PostgresStore(process.env['DB']!);
 const PORT = 2230;
-const server = Server({ games: games, db })
+const server = Server({ games: games, db: db, generateCredentials: generateCredentials })
 const COOKIE_KEY = process.env['COOKIE_KEY'] ?? "koa.session"
 const APP_KEY = process.env['APP_KEY'] ?? "veryverysecret"
 const DEVELOPMENT = process.env['NODE_ENV'] == "development";
+const gameList: IGameDefinition[] = require("../games.json");
 
 main();
 
@@ -44,6 +57,17 @@ async function registerEndpoints() {
     var newuserCompiled = Handlebars.compile((await Fs.readFile("templates/newuser.hbs")).toString());
     router.get("/newuser", async (ctx: Koa.Context) => {
         ctx.body = newuserCompiled({});
+    });
+
+    var createGameCompiled = Handlebars.compile((await Fs.readFile("templates/createGame.hbs")).toString());
+    router.get("/createGame", async (ctx: Koa.Context) => {
+        let gameOptions = gameList.filter((i) => i.available)
+            .map((i) => ({ id: i.gameid, title: `${i.title} (${i.version})` }));
+        ctx.body = createGameCompiled({
+            username: ctx.state?.user?.username,
+            loggedin: ctx.isAuthenticated(),
+            games: gameOptions
+        });
     });
 
     router.get("/logout", async (ctx: Koa.Context) => {
@@ -99,6 +123,7 @@ async function postLogin(ctx: Koa.Context) {
     })(ctx);
 }
 
+
 async function registerPartials() {
     Handlebars.registerPartial('main', await (await Fs.readFile("templates/main.hbs")).toString());
 }
@@ -123,6 +148,7 @@ function main() {
     server.app.use(session(session_config, server.app));
     server.app.use(passport.initialize());
     server.app.use(passport.session());
+    server.db = db;
 
     registerPartials().then(() => {
         registerEndpoints()
