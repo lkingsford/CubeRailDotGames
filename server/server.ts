@@ -58,7 +58,7 @@ async function putRegister(ctx: Koa.Context) {
             break;
         case UserCreateResult.badUsername:
             ctx.response.status = 400;
-            ctx.response.body = "Invalid username - must be >0 characters";
+            ctx.response.body = "Invalid username - must be >0 characters, no whitespace";
             break;
         case UserCreateResult.success:
             ctx.response.status = 200;

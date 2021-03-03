@@ -53,7 +53,7 @@ export class User {
         let client = await pool.connect();
         try {
             const q = {
-                text: 'SELECT user_id, username, pass_hash, role FROM users WHERE username = $1;',
+                text: 'SELECT user_id, username, pass_hash, role FROM users WHERE username ILIKE $1;',
                 values: [username]
             }
             let result = await client.query(q)
@@ -100,14 +100,18 @@ export class User {
         if (username.trim().length == 0) {
             return UserCreateResult.badUsername;
         }
+        if (/\s/g.test(username)) {
+            return UserCreateResult.badUsername;
+        }
+        username = username.trim();
         let client = await pool.connect();
         try {
             const q = {
-                text: 'SELECT count(user_id) FROM users WHERE username = $1;',
+                text: 'SELECT count(user_id) FROM users WHERE username ILIKE $1;',
                 values: [username]
             }
             let result = await client.query(q)
-            if (result.rows[0][0] > 0) {
+            if (result.rows[0].count > 0) {
                 return UserCreateResult.userExists;
             }
         }
