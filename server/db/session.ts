@@ -38,8 +38,8 @@ export class Session {
 
     async set(key: string, sess: any, data: any) {
         const q = {
-            text: 'INSERT INTO session (key, data, to_timestamp(expires / 1000)) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, expires = EXCLUDED.expires;',
-            values: [key, JSON.stringify(sess), sess._expire]
+            text: 'INSERT INTO session (key, data, expires) VALUES ($1, $2, to_timestamp( $3 )) ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, expires = EXCLUDED.expires;',
+            values: [key, JSON.stringify(sess), sess._expire / 1000]
         }
         let client = await pool.connect();
         try {

@@ -1,16 +1,16 @@
 {{#> main}}
 {{#*inline "title"}}
-cuberail.games - Register an account
+cuberail.games - Login
 {{/inline}}
 {{#*inline "content"}}
 <div class="row">
     <div class="twelve columns">
-        <h1>Register an account</h1>
+        <h1>Login</h1>
     </div>
 </div>
 <div class="row">
     <div class="two columns">
-        Username to Register
+        Username
     </div>
     <div class="two columns">
         <input type="text" id="username" />
@@ -18,7 +18,7 @@ cuberail.games - Register an account
 </div>
 <div class="row">
     <div class="two columns">
-        Desired password
+        Password
     </div>
     <div class="two columns">
         <input type="password" id="password" />
@@ -28,7 +28,7 @@ cuberail.games - Register an account
     <div class="two columns"><p></p>
     </div>
     <div class="four columns">
-        <button id="create" onclick="createaccount()">Create account</button>
+        <button id="create" onclick="login()">Login</button>
     </div>
     <div class="four columns" id="status">
     </div>

@@ -4,6 +4,7 @@ import { getHash, passwordOk } from '../auth';
 export enum UserCreateResult {
     success,
     badPassword,
+    badUsername,
     userExists
 }
 
@@ -19,12 +20,12 @@ export class User {
     constructor() {
     }
 
-    private static FromRow(row: any[]): User {
+    private static FromRow(row: any): User {
         let result = new User();
-        result.userId = row[0],
-        result.username = row[1],
-        result.passwordHash = row[2],
-        result.role = row[3]
+        result.userId = row.user_id;
+        result.username = row.username;
+        result.passwordHash = row.pass_hash;
+        result.role = row.role;
         return result;
     }
 
@@ -95,6 +96,9 @@ export class User {
     public static async CreateUser(username: string, password: string): Promise<UserCreateResult> {
         if (!passwordOk(password)) {
             return UserCreateResult.badPassword;
+        }
+        if (username.trim().length == 0) {
+            return UserCreateResult.badUsername;
         }
         let client = await pool.connect();
         try {

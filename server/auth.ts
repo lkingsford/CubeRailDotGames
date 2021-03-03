@@ -39,4 +39,4 @@ passport.deserializeUser(function (userId: number, done: (...args: any[]) => any
         .catch(err => done(err))
 })
 
-passport.use(new LocalStrategy(verify));
+passport.use(new LocalStrategy({usernameField: "username", passwordField: "password"}, verify));
