@@ -43,3 +43,10 @@ function login() {
     request.open("post", `/login_user?${query}`, true);
     request.send();
 }
+
+function startGame() {
+    var result = document.getElementById("gamename").value;
+    var request = new XMLHttpRequest();
+    request.open("post", `/games/${result}/create`);
+    request.send();
+}

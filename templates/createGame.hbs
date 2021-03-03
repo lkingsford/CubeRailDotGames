@@ -1,0 +1,36 @@
+{{#> main}}
+{{#*inline "title"}}
+cuberail.games
+{{/inline}}
+{{#*inline "content"}}
+<h1>Create New Game</h1>
+<div class="row">
+    <div class="two columns">
+        Description
+    </div>
+    <div class="two columns">
+        <input type="text" id="description" />
+    </div>
+</div>
+<div class="row">
+    <div class="two columns">
+        Game
+    </div>
+    <div class="two columns">
+    <select name="gamename" id="gamename">
+        {{#each games}}
+        <option value="{{id}}">{{title}}</option>
+        {{/each}}
+    </select>
+    </div>
+</div>
+<div class="row">
+    <div class="two columns">
+        <p/>
+    </div>
+    <div class="two columns">
+        <button onclick="startGame()">Start Game</button>
+    </div>
+</div>
+{{/inline}}
+{{/main}}
