@@ -87,7 +87,7 @@ async function registerEndpoints() {
 async function putRegister(ctx: Koa.Context) {
     var body = JSON.parse(ctx.request.body);
     let result = await User.CreateUser(body.username, body.password);
-    switch (result) {
+    switch (result.result) {
         case UserCreateResult.badPassword:
             ctx.response.status = 400;
             ctx.response.body = "Invalid password - must be >8 characters";
@@ -102,6 +102,10 @@ async function putRegister(ctx: Koa.Context) {
         case UserCreateResult.userExists:
             ctx.response.status = 400;
             ctx.response.body = "User already exists"
+    }
+    if (result.result == UserCreateResult.success) {
+        // Log in to newly created user
+        await ctx.login(result.user);
     }
 }
 
