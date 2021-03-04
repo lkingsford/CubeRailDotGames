@@ -79,7 +79,7 @@ export class User {
                 }
                 let result = await client.query(select);
                 await client.release();
-                this.userId = result.rows[0][0];
+                this.userId = result.rows[0].user_id;
             } else {
                 const update = {
                     text: 'UPDATE user SET username = $1, pass_hash = $2, role = $3 WHERE user_id = $4',
@@ -93,15 +93,15 @@ export class User {
         }
     }
 
-    public static async CreateUser(username: string, password: string): Promise<UserCreateResult> {
+    public static async CreateUser(username: string, password: string): Promise<{result: UserCreateResult, user?: User}> {
         if (!passwordOk(password)) {
-            return UserCreateResult.badPassword;
+            return {result: UserCreateResult.badPassword};
         }
         if (username.trim().length == 0) {
-            return UserCreateResult.badUsername;
+            return {result: UserCreateResult.badUsername};
         }
         if (/\s/g.test(username)) {
-            return UserCreateResult.badUsername;
+            return {result: UserCreateResult.badUsername};
         }
         username = username.trim();
         let client = await pool.connect();
@@ -112,7 +112,7 @@ export class User {
             }
             let result = await client.query(q)
             if (result.rows[0].count > 0) {
-                return UserCreateResult.userExists;
+                return {result: UserCreateResult.userExists};
             }
         }
         finally {
@@ -123,6 +123,6 @@ export class User {
         user.password = password;
         user.role = "p";
         await user.Save();
-        return UserCreateResult.success;
+        return {result: UserCreateResult.success, user: user};
     }
 }
