@@ -3,6 +3,12 @@
         "repository": "https://github.com/lkingsford/EmuBayOnlineClient",
         "hash": "4d5330fc17c0b2eeaf207f29370217e942fb9193",
         "object": "EmuBayRailwayCompany",
-        "gameid": "emu-bay-railway-company-1"
+        "gameid": "emu-bay-railway-company-1",
+        "title": "Emu Bay Railway Company",
+        "designer": "Lachlan Kingsford",
+        "version": "Playtest 2021-01-24 (Client 1)",
+        "available": true,
+        "minPlayers": 2,
+        "maxPlayers": 4
     } 
 ]
