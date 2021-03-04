@@ -7,4 +7,6 @@ export interface IGameDefinition {
     designer: string;
     version: string;
     available: boolean;
+    minPlayers: number;
+    maxPlayers: number;
 }

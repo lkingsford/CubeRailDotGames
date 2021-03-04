@@ -17,20 +17,21 @@ cuberail.games
         Game
     </div>
     <div class="two columns">
-    <select name="gamename" id="gamename">
+    <select name="gamename" id="gamename" onchange="createGame_onChange()" >
         {{#each games}}
-        <option value="{{id}}">{{title}}</option>
+        <option id="{{id}}" value="{{id}}" data-minPlayers="{{minPlayers}}" data-maxPlayers="{{maxPlayers}}" >{{title}} ({{minPlayers}}-{{maxPlayers}} players)</option>
         {{/each}}
     </select>
     </div>
 </div>
-<div class="row">
-    <div class="two columns">
-        <p/>
-    </div>
-    <div class="two columns">
-        <button onclick="startGame()">Start Game</button>
+<div class="row" id="buttons">
+</div>
+<div class="row" id="buttons">
+    <div class="four columns" id="status">
     </div>
 </div>
+<script type="text/javascript">
+    document.onload = createGame_onLoad();
+</script>
 {{/inline}}
 {{/main}}
