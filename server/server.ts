@@ -61,7 +61,8 @@ async function registerEndpoints() {
                     title: titleData?.title,
                     version: titleData?.version,
                     players: i?.players?.map((k) => k.name).join(', '),
-                    gameID: i?.gameId
+                    matchId: i?.gameId,
+                    gameId: titleData?.gameid
                 }
             })
             let opengame: any = (await GameModel.FindOpen(ctx?.state?.user?.userId)).map(i => {
@@ -70,8 +71,9 @@ async function registerEndpoints() {
                     title: titleData?.title,
                     version: titleData?.version,
                     players: i?.players?.map((k) => k.name).join(', '),
-                    gameID: i?.gameId,
-                    remaining: i?.openSlots
+                    matchId: i?.gameId,
+                    remaining: i?.openSlots,
+                    gameId: titleData?.gameid
                 }
             })
             ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame });
