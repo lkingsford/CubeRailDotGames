@@ -128,3 +128,11 @@ function lobby_joinGame(o) {
 
     joinGame(gameId, matchId, 0, ()=>{window.location.replace('/')});
 }
+function lobby_enterGame(o) {
+    var playerId = o.dataset['playerid'];
+    var matchId = o.dataset['matchid'];
+    var clienturi = o.dataset['clienturi'];
+    uri = clienturi + `?matchId=${matchId}&playerId=${playerId}`
+
+    window.location.replace(uri);
+}

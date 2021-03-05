@@ -62,7 +62,9 @@ async function registerEndpoints() {
                     version: titleData?.version,
                     players: i?.players?.map((k) => k.name).join(', '),
                     matchId: i?.gameId,
-                    gameId: titleData?.gameid
+                    gameId: titleData?.gameid,
+                    playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
+                    clientUri: `/clients/${titleData?.gameid}/index.html`
                 }
             })
             let opengame: any = (await GameModel.FindOpen(ctx?.state?.user?.userId)).map(i => {
