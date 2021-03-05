@@ -35,6 +35,14 @@ const gameList: IGameDefinition[] = require("../games.json");
 
 main();
 
+function getCommonState(ctx: Koa.Context) {
+    let authenticated = ctx.isAuthenticated();
+    return {
+        username: ctx.state?.user?.username,
+        loggedin: authenticated,
+    }
+}
+
 async function registerEndpoints() {
     var router: KoaRouter = server.router;
 
@@ -43,20 +51,20 @@ async function registerEndpoints() {
     var lobbyCompiled = Handlebars.compile((await Fs.readFile("templates/lobby.hbs")).toString());
     router.get("/", async (ctx: Koa.Context) => {
         if (!ctx.isAuthenticated()) {
-            ctx.body = aboutCompiled({ username: ctx.state?.user?.username, loggedin: ctx.isAuthenticated() });
+            ctx.body = aboutCompiled({ state: getCommonState(ctx) });
         }
         else {
-            ctx.body = lobbyCompiled({ username: ctx.state?.user?.username, loggedin: ctx.isAuthenticated() });
+            ctx.body = lobbyCompiled({ state: getCommonState(ctx) });
         }
     });
 
     router.get("/about", async (ctx: Koa.Context) => {
-        ctx.body = aboutCompiled({ username: ctx.state?.user?.username, loggedin: ctx.isAuthenticated() });
+        ctx.body = aboutCompiled({ state: getCommonState(ctx) });
     });
 
     var newuserCompiled = Handlebars.compile((await Fs.readFile("templates/newuser.hbs")).toString());
     router.get("/newuser", async (ctx: Koa.Context) => {
-        ctx.body = newuserCompiled({});
+        ctx.body = newuserCompiled({ state: getCommonState(ctx) });
     });
 
     var createGameCompiled = Handlebars.compile((await Fs.readFile("templates/createGame.hbs")).toString());
@@ -68,8 +76,7 @@ async function registerEndpoints() {
         let gameOptions = gameList.filter((i) => i.available)
             .map((i) => ({ id: i.gameid, title: `${i.title} (${i.version})`, minPlayers: i.minPlayers, maxPlayers: i.maxPlayers}));
         ctx.body = createGameCompiled({
-            username: ctx.state?.user?.username,
-            loggedin: ctx.isAuthenticated(),
+            state: getCommonState(ctx),
             games: gameOptions
         });
     });
@@ -81,7 +88,7 @@ async function registerEndpoints() {
 
     var loginCompiled = Handlebars.compile((await Fs.readFile("templates/login.hbs")).toString());
     router.get("/login", async (ctx: Koa.Context) => {
-        ctx.body = loginCompiled({});
+        ctx.body = loginCompiled({state: getCommonState(ctx)});
     });
     router.post("/login_user", koaBody(), postLogin);
 
