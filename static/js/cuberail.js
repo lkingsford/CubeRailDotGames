@@ -56,8 +56,8 @@ function startGame(playerCount) {
     request.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             statusElement.innerHTML = "Created";
-            var gameId = this.responseText;
-            joinGame(result, gameId);
+            var gameId = this.responseText["matchID"];
+            joinGame(result, gameId, 0);
         } 
         else if (this.readyState == 4 && this.status != 200) {
             statusElement.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
@@ -66,16 +66,20 @@ function startGame(playerCount) {
     request.send();
 }
 
-function joinGame(gameId, matchId) {
+function joinGame(gameId, matchId, playerId) {
+    var data = new FormData();
+    data.append('playerName', STATE.username);
+    data.append('playerID', playerId);
+    var query = (new URLSearchParams(data)).toString()
     var request = new XMLHttpRequest();
-    request.open("post", `/games/${gameId}/${matchId}/join`, true);
+    request.open("post", `/games/${gameId}/${matchId}/join?${query}`, true);
     status.innerHTML = "Joining game...";
     request.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-            statusElement.innerHTML = "Succeeded";
+            status.innerHTML = "Succeeded";
         } 
         else if (this.readyState == 4 && this.status != 200) {
-            statusElement.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
+            status.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
         }
     }
     request.send();
@@ -99,12 +103,11 @@ function createGame_updateButtons() {
     var maxPlayers = Number(selectedGameE.dataset['maxplayers']);
     for(var i = minPlayers; i <= maxPlayers; ++i) {
         var buttonDiv = document.createElement("div");
-        buttonDiv.classList.add("two", "columns");
+        buttonDiv.classList.add("four", "columns");
         buttonsElement.appendChild(buttonDiv);
         var button = document.createElement("button");
         button.innerText = `Start ${i} player${i>1?"s":""}`;
         button.onclick = ()=>{startGame(i);}
         buttonDiv.appendChild(button);
     }
-
 }
