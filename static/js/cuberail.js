@@ -47,32 +47,30 @@ function login() {
 function startGame(playerCount) {
     var result = document.getElementById("gamename").value;
     var statusElement = document.querySelector("#status");
-    var data = new FormData();
-    data.append('numPlayers', playerCount);
-    var query = (new URLSearchParams(data)).toString();
     var request = new XMLHttpRequest();
-    request.open("post", `/games/${result}/create?${query}`, true);
+    request.open("post", `/games/${result}/create`, true);
     status.innerHTML = "Creating game...";
     request.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             statusElement.innerHTML = "Created";
-            var gameId = this.responseText["matchID"];
+            var gameId = JSON.parse(this.responseText)["matchID"];
             joinGame(result, gameId, 0);
         } 
         else if (this.readyState == 4 && this.status != 200) {
             statusElement.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
         }
     }
-    request.send();
+    request.setRequestHeader("content-type", "application/json");
+    request.send(JSON.stringify({numPlayers: playerCount}));
 }
 
 function joinGame(gameId, matchId, playerId) {
     var data = new FormData();
+    var status = document.querySelector("#status");
     data.append('playerName', STATE.username);
-    data.append('playerID', playerId);
-    var query = (new URLSearchParams(data)).toString()
+    data.append('playerID', `${playerId}`);
     var request = new XMLHttpRequest();
-    request.open("post", `/games/${gameId}/${matchId}/join?${query}`, true);
+    request.open("post", `/games/${gameId}/${matchId}/join`, true);
     status.innerHTML = "Joining game...";
     request.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
@@ -82,7 +80,8 @@ function joinGame(gameId, matchId, playerId) {
             status.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
         }
     }
-    request.send();
+    request.setRequestHeader("content-type", "application/json");
+    request.send(JSON.stringify({playerName: STATE.username, playerID: playerId}));
 }
 
 function createGame_onLoad() {
@@ -107,7 +106,8 @@ function createGame_updateButtons() {
         buttonsElement.appendChild(buttonDiv);
         var button = document.createElement("button");
         button.innerText = `Start ${i} player${i>1?"s":""}`;
-        button.onclick = ()=>{startGame(i);}
+        button.dataset["players"] = i;
+        button.onclick = (e)=>{startGame(e.target.dataset["players"]);}
         buttonDiv.appendChild(button);
     }
 }

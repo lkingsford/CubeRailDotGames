@@ -18,7 +18,7 @@ const passport = require('koa-passport');
 // Use the player ID as the credentials
 const generateCredentials = (ctx: Koa.DefaultContext): string => {
     if (ctx.isAuthenticated()) {
-        return ctx.state?.user?.user_id;
+        return ctx.state?.user?.userId;
     } else {
         throw new Error('user is not logged in')
     }
