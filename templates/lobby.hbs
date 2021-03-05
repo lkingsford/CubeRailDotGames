@@ -3,9 +3,38 @@
 cuberail.games
 {{/inline}}
 {{#*inline "content"}}
-<h1>Lobby</h1>
-<form action="/createGame">
-    <button type="submit">Create new game</button>
-</form>
+<div class="row">
+    <h1>Lobby</h1>
+    <form action="/createGame">
+        <button type="submit">Create new game</button>
+    </form>
+</div>
+<div class="row">
+    <h2>Your Games</h2>
+</div>
+<div class="row">
+    {{#each yourgame}}
+    <div class="three columns game_card">
+        <div class="game_card_title">{{title}}</div>
+        <div class="game_card_version">{{version}}</div>
+        <div class="game_card_players">Players: {{players}}</div>
+        <button>Enter</button>
+    </div>
+    {{/each}}
+</div>
+<div class="row">
+    <h2>Open Games</h2>
+</div>
+<div class="row">
+    {{#each opengame}}
+    <div class="three columns game_card" data-gameid="{{gameId}}">
+        <div class="game_card_title">{{title}}</div>
+        <div class="game_card_version">{{version}}</div>
+        <div class="game_card_players">Players {{players}}</div>
+        <div class="game_card_players">({{remaining}} spaces remaining)</div>
+        <button>Join</button>
+    </div>
+    {{/each}}
+</div>
 {{/inline}}
 {{/main}}

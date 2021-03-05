@@ -10,6 +10,7 @@ import * as Fs from 'fs/promises';
 import { Session as DbSession } from './db/session'
 import { User, UserCreateResult } from './db/user'
 import { IGameDefinition } from './IGameDefinition';
+import { Game as GameModel } from './db/game';
 
 // Not using types due to the types being older versions of Koa
 const passport = require('koa-passport');
@@ -54,7 +55,26 @@ async function registerEndpoints() {
             ctx.body = aboutCompiled({ state: getCommonState(ctx) });
         }
         else {
-            ctx.body = lobbyCompiled({ state: getCommonState(ctx) });
+            let yourgame = (await GameModel.FindActiveByPlayer(ctx?.state?.user?.userId)).map(i => {
+                let titleData = gameList.find((j) => j.gameid == i?.gameName);
+                return {
+                    title: titleData?.title,
+                    version: titleData?.version,
+                    players: i?.players?.map((k) => k.name).join(', '),
+                    gameID: i?.gameId
+                }
+            })
+            let opengame: any = (await GameModel.FindOpen(ctx?.state?.user?.userId)).map(i => {
+                let titleData = gameList.find((j) => j.gameid == i?.gameName);
+                return {
+                    title: titleData?.title,
+                    version: titleData?.version,
+                    players: i?.players?.map((k) => k.name).join(', '),
+                    gameID: i?.gameId,
+                    remaining: i?.openSlots
+                }
+            })
+            ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame });
         }
     });
 
@@ -74,7 +94,7 @@ async function registerEndpoints() {
             return;
         }
         let gameOptions = gameList.filter((i) => i.available)
-            .map((i) => ({ id: i.gameid, title: `${i.title} (${i.version})`, minPlayers: i.minPlayers, maxPlayers: i.maxPlayers}));
+            .map((i) => ({ id: i.gameid, title: `${i.title} (${i.version})`, minPlayers: i.minPlayers, maxPlayers: i.maxPlayers }));
         ctx.body = createGameCompiled({
             state: getCommonState(ctx),
             games: gameOptions
@@ -88,7 +108,7 @@ async function registerEndpoints() {
 
     var loginCompiled = Handlebars.compile((await Fs.readFile("templates/login.hbs")).toString());
     router.get("/login", async (ctx: Koa.Context) => {
-        ctx.body = loginCompiled({state: getCommonState(ctx)});
+        ctx.body = loginCompiled({ state: getCommonState(ctx) });
     });
     router.post("/login_user", koaBody(), postLogin);
 
