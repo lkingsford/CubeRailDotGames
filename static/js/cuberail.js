@@ -54,7 +54,7 @@ function startGame(playerCount) {
         if (this.readyState == 4 && this.status == 200) {
             statusElement.innerHTML = "Created";
             var gameId = JSON.parse(this.responseText)["matchID"];
-            joinGame(result, gameId, 0);
+            joinGame(result, gameId, 0, ()=>{window.location.replace('/')});
         } 
         else if (this.readyState == 4 && this.status != 200) {
             statusElement.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
@@ -64,20 +64,30 @@ function startGame(playerCount) {
     request.send(JSON.stringify({numPlayers: playerCount}));
 }
 
-function joinGame(gameId, matchId, playerId) {
+function joinGame(gameId, matchId, playerId, doneCallback) {
     var data = new FormData();
     var status = document.querySelector("#status");
     data.append('playerName', STATE.username);
     data.append('playerID', `${playerId}`);
     var request = new XMLHttpRequest();
     request.open("post", `/games/${gameId}/${matchId}/join`, true);
-    status.innerHTML = "Joining game...";
+    if (status) status.innerHTML = "Joining game...";
     request.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-            status.innerHTML = "Succeeded";
+            if (status) status.innerHTML = "Succeeded";
+            if (doneCallback) { doneCallback(); }
         } 
         else if (this.readyState == 4 && this.status != 200) {
-            status.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
+            if (status) status.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
+        }
+        else if (this.status == 409) {
+            // Game already joined - try next ID
+            // TODO: Make this not awful
+            var nextId = playerId + 1;
+            if (nextId <= 6) {
+                console.log("Trying player ID %s", nextId)
+                joinGame(gameId, matchId, nextId, doneCallback);
+            }
         }
     }
     request.setRequestHeader("content-type", "application/json");
@@ -110,4 +120,11 @@ function createGame_updateButtons() {
         button.onclick = (e)=>{startGame(e.target.dataset["players"]);}
         buttonDiv.appendChild(button);
     }
+}
+
+function lobby_joinGame(o) {
+    var gameId = o.dataset['gameid'];
+    var matchId = o.dataset['matchid'];
+
+    joinGame(gameId, matchId, 0, ()=>{window.location.replace('/')});
 }

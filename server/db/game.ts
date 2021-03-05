@@ -128,12 +128,12 @@ export class Game {
             let result = await client.query(q)
             return result.rows.map((row => {
                 var game = new Game();
-                game.gameId = result.rows[0].id;
-                game.gameName = result.rows[0].gameName;
-                game.players = Game.PlayersFromResult(result.rows[0].players);
-                game.gameover = result.rows[0].gameover;
-                game.updatedAt = result.rows[0].updatedAt;
-                game.openSlots = this.OpenSlotsFromResults(result.rows[0].players);
+                game.gameId = row.id;
+                game.gameName = row.gameName;
+                game.players = Game.PlayersFromResult(row.players);
+                game.gameover = row.gameover;
+                game.updatedAt = row.updatedAt;
+                game.openSlots = this.OpenSlotsFromResults(row.players);
                 return game;
             }));
         }
