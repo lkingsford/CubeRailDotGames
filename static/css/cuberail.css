@@ -38,3 +38,24 @@ a:hover {
 select {
     padding: 0px 10px;
 }
+
+.game_card_title {
+    background-color: #594757;
+    color: #fff;
+    font-size: .8em;
+}
+
+.game_card_version {
+    font-size: .6em;
+}
+
+.game_card_players {
+    font-size: .6em;
+}
+
+.game_card {
+    padding: 2px;
+    border-color: #594757;
+    border-style: solid;
+    border-width: 1px;
+}
