@@ -63,6 +63,7 @@ async function registerEndpoints() {
                     players: i?.players?.map((k) => k.name).join(', '),
                     matchId: i?.gameId,
                     gameId: titleData?.gameid,
+                    remaining: i?.openSlots,
                     playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
                     clientUri: `/clients/${titleData?.gameid}/index.html`
                 }
