@@ -69,7 +69,9 @@ async function installClientPackages(game: IGameDefinition) {
 async function compileClient(game: IGameDefinition) {
     console.log("Compiling client packages for %s", game.gameid);
     await new Promise<void>(function (resolve) {
-        var npm = child.spawn("npm", ["--prefix", path.join(gamerepos, game.gameid), "run-script", "build"]);
+        var env = {... process.env};
+        env['NODE_ENV'] = 'production';
+        var npm = child.spawn("npm", ["--prefix", path.join(gamerepos, game.gameid), "run-script", "build-prod"], {env: env});
         npm.stdout.on("data", data => { console.log("[%s]  %s", game.gameid, data) });
         npm.stderr.on("data", data => { console.log("[%s]! %s", game.gameid, data) });
         npm.on("close", code => { resolve(); })
