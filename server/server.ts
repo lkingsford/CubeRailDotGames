@@ -11,12 +11,22 @@ import { Session as DbSession } from './db/session'
 import { User, UserCreateResult } from './db/user'
 import { IGameDefinition } from './IGameDefinition';
 import { Game as GameModel } from './db/game';
+import { Credentials } from './db/credentials';
 
 // Not using types due to the types being older versions of Koa
 const passport = require('koa-passport');
 
+interface IPlayerMetadata {
+    id: number;
+    name?: string;
+    credentials?: string;
+    data?: any;
+    isConnected?: boolean;
+};
 
-// Use the player ID as the credentials
+// Use the player ID as the credentials. The client has to get an actual credential
+// which is stored in the DB and checked against in authCredentials (because 
+// boardgame.io doesn't pass ctx to authCredentials)
 const generateCredentials = (ctx: Koa.DefaultContext): string => {
     if (ctx.isAuthenticated()) {
         return ctx.state?.user?.userId;
@@ -25,10 +35,17 @@ const generateCredentials = (ctx: Koa.DefaultContext): string => {
     }
 }
 
+const authCredentials = async (credentials: string, playerMetadata: IPlayerMetadata): Promise<boolean> => {
+    if (credentials) {
+        if (!playerMetadata.credentials) { return false }
+        return await Credentials.CheckCredential(Number(playerMetadata.credentials!), credentials);
+    }
+    return false;
+}
 
 const db = new PostgresStore(process.env['DB']!);
 const PORT = 2230;
-const server = Server({ games: games, db: db, generateCredentials: generateCredentials })
+const server = Server({ games: games, db: db, generateCredentials: generateCredentials, authenticateCredentials: authCredentials})
 const COOKIE_KEY = process.env['COOKIE_KEY'] ?? "koa.session"
 const APP_KEY = process.env['APP_KEY'] ?? "veryverysecret"
 const DEVELOPMENT = process.env['NODE_ENV'] == "development";
@@ -118,6 +135,8 @@ async function registerEndpoints() {
     router.post("/login_user", koaBody(), postLogin);
 
     router.put("/register_user", koaBody(), putRegister);
+
+    router.get("/get_credentials", koaBody(), getGetCredentials);
 }
 
 async function putRegister(ctx: Koa.Context) {
@@ -163,6 +182,16 @@ async function postLogin(ctx: Koa.Context) {
     })(ctx);
 }
 
+async function getGetCredentials(ctx: Koa.Context) {
+    let authenticated = ctx.isAuthenticated();
+    if (!authenticated) {
+        ctx.status = 401
+        return;
+    }
+    let cred = await Credentials.CreateCredential(ctx.state!.user!.userId);
+    ctx.status = 200;
+    ctx.body = cred;
+}
 
 async function registerPartials() {
     Handlebars.registerPartial('main', await (await Fs.readFile("templates/main.hbs")).toString());
