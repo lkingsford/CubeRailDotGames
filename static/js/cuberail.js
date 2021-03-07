@@ -55,6 +55,7 @@ function startGame(playerCount) {
             statusElement.innerHTML = "Created";
             var gameId = JSON.parse(this.responseText)["matchID"];
             joinGame(result, gameId, 0, ()=>{window.location.replace('/')});
+            setGameName(gameId, document.getElementById("description").value);
         } 
         else if (this.readyState == 4 && this.status != 200) {
             statusElement.innerHTML = `Failed (${this.status}) - ${this.responseText}`;
@@ -62,6 +63,12 @@ function startGame(playerCount) {
     }
     request.setRequestHeader("content-type", "application/json");
     request.send(JSON.stringify({numPlayers: playerCount}));
+}
+
+function setGameName(gameId, description) {
+    var request = new XMLHttpRequest();
+    request.open("put", "/set_game_name")
+    request.send(JSON.stringify({gameId: gameId, description: description}));
 }
 
 function joinGame(gameId, matchId, playerId, doneCallback) {

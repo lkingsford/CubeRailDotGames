@@ -10,7 +10,7 @@ import * as Fs from 'fs/promises';
 import { Session as DbSession } from './db/session'
 import { User, UserCreateResult } from './db/user'
 import { IGameDefinition } from './IGameDefinition';
-import { Game as GameModel } from './db/game';
+import { Game, Game as GameModel } from './db/game';
 import { Credentials } from './db/credentials';
 
 // Not using types due to the types being older versions of Koa
@@ -75,6 +75,7 @@ async function registerEndpoints() {
             let yourgame = (await GameModel.FindActiveByPlayer(ctx?.state?.user?.userId)).map(i => {
                 let titleData = gameList.find((j) => j.gameid == i?.gameName);
                 return {
+                    description: i?.description,
                     title: titleData?.title,
                     version: titleData?.version,
                     players: i?.players?.map((k) => k.name).join(', '),
@@ -88,6 +89,7 @@ async function registerEndpoints() {
             let opengame: any = (await GameModel.FindOpen(ctx?.state?.user?.userId)).map(i => {
                 let titleData = gameList.find((j) => j.gameid == i?.gameName);
                 return {
+                    description: i?.description,
                     title: titleData?.title,
                     version: titleData?.version,
                     players: i?.players?.map((k) => k.name).join(', '),
@@ -137,6 +139,8 @@ async function registerEndpoints() {
     router.put("/register_user", koaBody(), putRegister);
 
     router.get("/get_credentials", koaBody(), getGetCredentials);
+
+    router.put("/set_game_name", koaBody(), putSetGameName);
 }
 
 async function putRegister(ctx: Koa.Context) {
@@ -162,6 +166,27 @@ async function putRegister(ctx: Koa.Context) {
         // Log in to newly created user
         await ctx.login(result.user);
     }
+}
+
+async function putSetGameName(ctx: Koa.Context) {
+    var body = JSON.parse(ctx.request.body);
+    if (ctx.isAuthenticated()) {
+        // If player is in game, can set the name
+        var game = await Game.Find(body.gameId);
+        if (!game?.players?.find((i)=>i.userId == ctx?.state?.user?.userId)) {
+            ctx.response.status = 401;
+            return;
+        }
+        // If is empty or whitespace
+        if (body.description.match(/^ *$/) !== null) {
+            body.description = `${ctx.state?.user?.username}'s game`;
+        }
+        Game.SaveMetadata(game.gameId!, body.description);
+        ctx.response.status = 200;
+        return;
+    }
+    ctx.response.status = 401;
+    return;
 }
 
 async function postLogin(ctx: Koa.Context) {

@@ -37,5 +37,20 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
             NOT VALID
     );
 
+    CREATE TABLE public.game_metadata
+    (
+        "gameId" character varying COLLATE pg_catalog."default" NOT NULL,
+        description character varying COLLATE pg_catalog."default",
+        CONSTRAINT game_metadata_pkey PRIMARY KEY ("gameId"),
+        CONSTRAINT fk_games_gamemetadata FOREIGN KEY ("gameId")
+            REFERENCES public."Games" (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE CASCADE
+    )
+
+    TABLESPACE pg_default;
+
+    ALTER TABLE public.game_metadata
+        OWNER to train;
 
 EOSQL

@@ -15,6 +15,7 @@ cuberail.games
 <div class="row">
     {{#each yourgame}}
     <div class="three columns game_card">
+        <div class="game_card_description">{{description}}</div>
         <div class="game_card_title">{{title}}</div>
         <div class="game_card_version">{{version}}</div>
         <div class="game_card_players">Players: {{players}}</div>
@@ -29,6 +30,7 @@ cuberail.games
 <div class="row">
     {{#each opengame}}
     <div class="three columns game_card">
+        <div class="game_card_description">{{description}}</div>
         <div class="game_card_title">{{title}}</div>
         <div class="game_card_version">{{version}}</div>
         <div class="game_card_players">Players {{players}}</div>

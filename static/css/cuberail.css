@@ -40,6 +40,10 @@ select {
 }
 
 .game_card_title {
+    font-size: .8em;
+}
+
+.game_card_description {
     background-color: #594757;
     color: #fff;
     font-size: .8em;
