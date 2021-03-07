@@ -127,6 +127,17 @@ function createGame_updateButtons() {
         button.onclick = (e)=>{startGame(e.target.dataset["players"]);}
         buttonDiv.appendChild(button);
     }
+    var hotseatButtonsElement = document.querySelector("#hotseatButtons");
+    for(var i = minPlayers; i <= maxPlayers; ++i) {
+        var buttonDiv = document.createElement("div");
+        buttonDiv.classList.add("four", "columns");
+        hotseatButtonsElement.appendChild(buttonDiv);
+        var button = document.createElement("button");
+        button.innerText = `Hotseat ${i} player${i>1?"s":""}`;
+        button.dataset["players"] = i;
+        button.onclick = (e)=>{window.location.replace(`/clients/${selectedGameE.id}?playerCount=${e.target.dataset["players"]}`)};
+        buttonDiv.appendChild(button);
+    }
 }
 
 function lobby_joinGame(o) {
