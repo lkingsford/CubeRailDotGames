@@ -4,3 +4,15 @@ RUN apt-get update
 RUN apt-get install -y build-essential
 RUN apt-get install -y python
 RUN mkdir /home/node/game_server
+COPY ./package.json /home/node/game_server/package.json
+COPY ./package-lock.json /home/node/game_server/package-lock.json
+COPY ./tsconfig.json /home/node/game_server/tsconfig.json
+COPY ./games.json /home/node/game_server/games.json
+COPY ./templates /home/node/game_server/templates
+COPY ./scripts  /home/node/game_server/scripts
+COPY ./server /home/node/game_server/server
+WORKDIR /home/node/game_server
+RUN npm ci
+RUN npm run-script update-games
+RUN npm run-script build
+ENTRYPOINT npm run-script start

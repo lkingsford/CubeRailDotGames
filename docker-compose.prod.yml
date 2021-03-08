@@ -10,7 +10,7 @@ services:
       - POSTGRES_PASSWORD=choochoo
       - POSTGRES_DB=train
     volumes:
-      - /var/lib/postgresql/data
+      - ./db_data:/var/lib/postgresql/data
 
   pgadmin4:
     build: pgadmin
@@ -29,11 +29,6 @@ services:
     environment:
       NODE_ENV: production
       DB: postgres://train:choochoo@db:5432/train
-    volumes:
-      - ./package.json:/home/node/game_server/package.json:ro
-      - ./package-lock.json:/home/node/game_server/package-lock.json:ro
-      - ./dist:/home/node/game_server/dist:ro
-      - ./templates:/home/node/game_server/templates:ro
     working_dir: /home/node/game_server
     entrypoint: "npm start"
     expose:
