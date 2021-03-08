@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cp games.json dist && npx tsc",
+    "build": "mkdir dist && cp games.json dist\games.json && npx tsc",
     "update-games": "npx ts-node scripts/update-games.ts",
     "serve": "node dist/server/server.js",
     "start-dev": "npx ts-node server/server.ts"
