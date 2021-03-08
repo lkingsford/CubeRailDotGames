@@ -148,9 +148,11 @@ export class Game {
     }
 
     public static async SaveMetadata(gameId: number, description: string) {
+        // Limit to not insanely long name
+        let descriptionToSave = description.slice(0, 60);
         const q = {
             text: 'INSERT INTO game_metadata ("gameId", description) VALUES ($1, $2) ON CONFLICT ("gameId") DO UPDATE SET description = EXCLUDED.description;',
-            values: [gameId, description]
+            values: [gameId, descriptionToSave]
         }
         let client = await pool.connect();
         try {

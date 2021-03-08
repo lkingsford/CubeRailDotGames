@@ -103,6 +103,9 @@ export class User {
         if (/\s/g.test(username)) {
             return {result: UserCreateResult.badUsername};
         }
+        if (username.length > 30) {
+            return {result: UserCreateResult.badUsername};
+        }
         username = username.trim();
         let client = await pool.connect();
         try {
