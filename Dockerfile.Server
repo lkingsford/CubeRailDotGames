@@ -1,2 +1,6 @@
 FROM node:15.10
+# Need buildtools for bcrypt
+RUN apt-get update
+RUN apt-get install -y build-essential
+RUN apt-get install -y python
 RUN mkdir /home/node/game_server

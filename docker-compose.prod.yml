@@ -41,9 +41,11 @@ services:
     dns:
       - 208.67.222.222
       - 127.0.0.11
+    restart: always
 
   nginx:
     image: nginx:1.19
+    restart: always
     ports:
       - "80:80"
     environment:
