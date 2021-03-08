@@ -39,7 +39,9 @@ services:
     restart: always
 
   nginx:
-    image: nginx:1.19
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     restart: always
     ports:
       - "80:80"
@@ -49,3 +51,6 @@ services:
       - ./nginx/etc_nginx/templates:/etc/nginx/templates:ro
       - ./dist-client:/var/www/clients:ro
       - ./static:/var/www/static:ro
+    dns:
+      - 208.67.222.222
+      - 127.0.0.1

@@ -1,7 +1,7 @@
 server {
     listen       80;
     listen  [::]:80;
-    server_name  localhost *.cuberail.games;
+    server_name  localhost www.cuberail.games cuberail.games;
     error_log /var/log/nginx/error.log debug;
     #charset koi8-r;
     access_log  /var/log/nginx/host.access.log  main;
