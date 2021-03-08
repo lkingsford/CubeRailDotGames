@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm ci && node dist/server/server.js",
+    "start": "node dist/server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx tsc",
+    "build": "cp games.json dist && npx tsc",
     "update-games": "npx ts-node scripts/update-games.ts",
     "serve": "node dist/server/server.js",
     "start-dev": "npx ts-node server/server.ts"
