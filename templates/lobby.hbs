@@ -39,5 +39,19 @@ cuberail.games
     </div>
     {{/each}}
 </div>
+<div class="row">
+    <h2>Finished Games</h2>
+</div>
+<div class="row">
+    {{#each donegame}}
+    <div class="three columns game_card">
+        <div class="game_card_description">{{description}}</div>
+        <div class="game_card_title">{{title}}</div>
+        <div class="game_card_version">{{version}}</div>
+        <div class="game_card_players">Players {{players}}</div>
+        <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="{{playerId}}" data-gameid="{{gameId}}" data-matchid="{{matchId}}" >Enter</button>
+    </div>
+    {{/each}}
+</div>
 {{/inline}}
 {{/main}}

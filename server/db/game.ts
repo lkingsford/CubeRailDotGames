@@ -68,13 +68,14 @@ export class Game {
         }
     }
 
-    public static async FindActiveByPlayer(userId: number): Promise<Game[]> {
+    public static async FindByPlayer(userId: number): Promise<Game[]> {
         let client = await pool.connect();
         try {
-
             const q = {
                 // TODO: Make this way less awful
-                text: `SELECT id, "gameName", players, gameover, "updatedAt", description FROM "Games" LEFT JOIN "game_metadata" ON ("game_metadata"."gameId" = "Games"."id") WHERE "gameover" is null AND (
+                // This relies on json for gameover because boardgame.io doesn't seem to correctly set it
+                text: `SELECT id, "gameName", players, state->'ctx'->>'gameover' as gameover, "updatedAt", description FROM "Games" LEFT JOIN "game_metadata" ON ("game_metadata"."gameId" = "Games"."id") 
+                 WHERE (
                  CAST(players->'0'->>'credentials' AS INTEGER) = $1 OR
                  CAST(players->'1'->>'credentials' AS INTEGER) = $1 OR
                  CAST(players->'2'->>'credentials' AS INTEGER) = $1 OR

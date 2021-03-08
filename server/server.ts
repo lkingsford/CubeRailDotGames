@@ -72,7 +72,8 @@ async function registerEndpoints() {
             ctx.body = aboutCompiled({ state: getCommonState(ctx) });
         }
         else {
-            let yourgame = (await GameModel.FindActiveByPlayer(ctx?.state?.user?.userId)).map(i => {
+            let allYourgames = (await GameModel.FindByPlayer(ctx?.state?.user?.userId));
+            let yourgame = allYourgames.filter((i)=>!i.gameover).map(i => {
                 let titleData = gameList.find((j) => j.gameid == i?.gameName);
                 return {
                     description: i?.description,
@@ -82,6 +83,19 @@ async function registerEndpoints() {
                     matchId: i?.gameId,
                     gameId: titleData?.gameid,
                     remaining: i?.openSlots,
+                    playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
+                    clientUri: `/clients/${titleData?.gameid}/index.html`
+                }
+            })
+            let donegame = allYourgames.filter((i)=>i.gameover).map(i => {
+                let titleData = gameList.find((j) => j.gameid == i?.gameName);
+                return {
+                    description: i?.description,
+                    title: titleData?.title,
+                    version: titleData?.version,
+                    players: i?.players?.map((k) => k.name).join(', '),
+                    matchId: i?.gameId,
+                    gameId: titleData?.gameid,
                     playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
                     clientUri: `/clients/${titleData?.gameid}/index.html`
                 }
@@ -98,7 +112,7 @@ async function registerEndpoints() {
                     gameId: titleData?.gameid
                 }
             })
-            ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame });
+            ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame, donegame: donegame });
         }
     });
 
