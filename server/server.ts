@@ -255,11 +255,11 @@ async function main() {
         secure: false, /** (boolean) secure cookie - OK cause over nginx **/
         store: new DbSession()
     }
+    server.app.use(session(session_config, server.app));
     server.app.use(passport.initialize());
     server.app.use(passport.session());
     server.db = db!;
     server.app.keys = [APP_KEY];
-    server.app.use(session(session_config, server.app));
 
     await registerPartials();
     await registerEndpoints(server.router, gameList);
