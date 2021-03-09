@@ -1,5 +1,5 @@
 import { systems } from "pixi.js";
-import { pool } from "./db";
+import { Pool } from "./db";
 
 export interface IGameUser {
     id: number; // <- Place
@@ -41,7 +41,7 @@ export class Game {
     }
 
     public static async Find(gameId: string): Promise<Game | undefined> {
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             const q = {
                 text: 'SELECT id, "gameName", players, gameover, "updatedAt", description FROM "Games" LEFT JOIN "game_metadata" ON ("game_metadata"."gameId" = "Games"."id") WHERE "id" = $1;',
@@ -69,7 +69,7 @@ export class Game {
     }
 
     public static async FindByPlayer(userId: number): Promise<Game[]> {
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             const q = {
                 // TODO: Make this way less awful
@@ -105,7 +105,7 @@ export class Game {
     }
 
     public static async FindOpen(userId: number): Promise<Game[]> {
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
 
             const q = {
@@ -154,7 +154,7 @@ export class Game {
             text: 'INSERT INTO game_metadata ("gameId", description) VALUES ($1, $2) ON CONFLICT ("gameId") DO UPDATE SET description = EXCLUDED.description;',
             values: [gameId, descriptionToSave]
         }
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             await client.query(q)
         }
