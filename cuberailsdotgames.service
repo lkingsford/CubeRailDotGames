@@ -1,0 +1,16 @@
+[Unit]
+Description="Cuberails.games server"
+After=network.target
+
+[Service]
+Environment=APP_KEY=
+Environment=COOKIE_KEY=
+Environment=postgres://train:PASSWORD@db:5432/train
+Environment=NODE_ENV=Production
+Type=simple
+User=train_site
+ExecStart=/usr/bin/npm run-script start --prefix /var/www/cuberaildotgames
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
