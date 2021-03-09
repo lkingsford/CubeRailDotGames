@@ -10,7 +10,7 @@ const games: IGameDefinition[] = require("../games.json")
 
 const gamerepos = "gamerepos"
 const gamefiles = "games"
-const clientstatic = "dist-client"
+const clientstatic = "clients"
 
 async function updateRepo(game: IGameDefinition) {
     console.log("Updating repo for %s", game.gameid);

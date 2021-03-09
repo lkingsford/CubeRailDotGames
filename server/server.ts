@@ -229,8 +229,6 @@ async function registerPartials() {
     Handlebars.registerPartial('main', await (await Fs.readFile("templates/main.hbs")).toString());
 }
 
-var runResult: any;
-
 async function main() {
     const DEVELOPMENT = process.env['NODE_ENV'] == "development";
     if (DEVELOPMENT) {
@@ -245,7 +243,6 @@ async function main() {
     const APP_KEY = process.env['APP_KEY'] ?? "veryverysecret"
     const gameList: IGameDefinition[] = require("../games.json");
 
-    await sleep(10);
     let session_config = {
         key: COOKIE_KEY,
         maxAge: 86400000,
@@ -255,7 +252,7 @@ async function main() {
         signed: true, /** (boolean) signed or not (default true) */
         rolling: false, /** (boolean) Force a session identifier cookie to be set on every response. The expiration is reset to the original maxAge, resetting the expiration countdown. (default is false) */
         renew: true, /** (boolean) renew session when session is nearly expired, so we can always keep user logged in. (default is false)*/
-        secure: !DEVELOPMENT, /** (boolean) secure cookie*/
+        secure: false, /** (boolean) secure cookie - OK cause over nginx **/
         store: new DbSession()
     }
     server.app.use(passport.initialize());
