@@ -1,4 +1,4 @@
-import { pool } from "./db";
+import { Pool } from "./db";
 
 export class Session {
     constructor () {
@@ -8,7 +8,7 @@ export class Session {
             text: 'DELETE FROM data WHERE KEY = $1',
             values: [key]
         }
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             await client.query(q);
         } 
@@ -22,7 +22,7 @@ export class Session {
             text: 'SELECT data FROM session WHERE key = $1;',
             values: [key]
         };
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             let result = await client.query(q);
             if (result.rowCount == 0) {
@@ -41,7 +41,7 @@ export class Session {
             text: 'INSERT INTO session (key, data, expires) VALUES ($1, $2, to_timestamp( $3 )) ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, expires = EXCLUDED.expires;',
             values: [key, JSON.stringify(sess), sess._expire / 1000]
         }
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             await client.query(q)
         }

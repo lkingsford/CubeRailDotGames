@@ -1,4 +1,4 @@
-import { pool } from "./db";
+import { Pool } from "./db";
 import { getHash, passwordOk } from '../auth';
 
 export enum UserCreateResult {
@@ -30,7 +30,7 @@ export class User {
     }
 
     public static async Find(userId: number): Promise<User | undefined> {
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             const q = {
                 text: 'SELECT user_id, username, pass_hash, role FROM users WHERE user_id = $1;',
@@ -50,7 +50,7 @@ export class User {
     }
 
     public static async FindUsername(username: string): Promise<User | undefined> {
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();
         try {
             const q = {
                 text: 'SELECT user_id, username, pass_hash, role FROM users WHERE username ILIKE $1;',
@@ -70,7 +70,7 @@ export class User {
     }
 
     public async Save(): Promise<void> {
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();;
         try {
             if (this.userId == undefined) {
                 const select = {
@@ -107,7 +107,7 @@ export class User {
             return {result: UserCreateResult.badUsername};
         }
         username = username.trim();
-        let client = await pool.connect();
+        let client = await (await Pool()).connect();;
         try {
             const q = {
                 text: 'SELECT count(user_id) FROM users WHERE username ILIKE $1;',

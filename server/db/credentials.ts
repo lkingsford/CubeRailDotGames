@@ -1,11 +1,10 @@
-import { systems } from "pixi.js";
-import { pool } from "./db";
+import { Pool } from "./db";
 import { nanoid } from "nanoid";
 
 export class Credentials {
     public static async CreateCredential(userId: number): Promise<string | undefined> {
         let cred = nanoid();
-        let client = await pool.connect()
+        let client = await (await Pool()).connect()
         try {
             const q = {
                 text: 'INSERT INTO credstore ("userId", credential, created) VALUES ($1, $2, NOW())',
@@ -20,7 +19,7 @@ export class Credentials {
     }
 
     public static async CheckCredential(userId: number, credential: string): Promise<boolean> {
-        let client = await pool.connect()
+        let client = await (await Pool()).connect()
         try {
             const q = {
                 text: 'SELECT "userId" FROM credstore WHERE credential = $1',

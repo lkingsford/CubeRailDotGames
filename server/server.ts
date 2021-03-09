@@ -12,6 +12,9 @@ import { User, UserCreateResult } from './db/user'
 import { IGameDefinition } from './IGameDefinition';
 import { Game, Game as GameModel } from './db/game';
 import { Credentials } from './db/credentials';
+import { promisify } from 'util';
+import { Pool } from './db/db';
+const sleep = promisify(setTimeout);
 
 // Not using types due to the types being older versions of Koa
 const passport = require('koa-passport');
@@ -43,15 +46,6 @@ const authCredentials = async (credentials: string, playerMetadata: IPlayerMetad
     return false;
 }
 
-const db = new PostgresStore(process.env['DB']!);
-const PORT = 2230;
-const server = Server({ games: games, db: db, generateCredentials: generateCredentials, authenticateCredentials: authCredentials})
-const COOKIE_KEY = process.env['COOKIE_KEY'] ?? "koa.session"
-const APP_KEY = process.env['APP_KEY'] ?? "veryverysecret"
-const DEVELOPMENT = process.env['NODE_ENV'] == "development";
-const gameList: IGameDefinition[] = require("../games.json");
-
-main();
 
 function getCommonState(ctx: Koa.Context) {
     let authenticated = ctx.isAuthenticated();
@@ -61,8 +55,7 @@ function getCommonState(ctx: Koa.Context) {
     }
 }
 
-async function registerEndpoints() {
-    var router: KoaRouter = server.router;
+async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[]) {
 
     // This might be better datadriven, but keeping this until amount of pages is untenable
     var aboutCompiled = Handlebars.compile((await Fs.readFile("templates/about.hbs")).toString());
@@ -73,7 +66,7 @@ async function registerEndpoints() {
         }
         else {
             let allYourgames = (await GameModel.FindByPlayer(ctx?.state?.user?.userId));
-            let yourgame = allYourgames.filter((i)=>!i.gameover).map(i => {
+            let yourgame = allYourgames.filter((i) => !i.gameover).map(i => {
                 let titleData = gameList.find((j) => j.gameid == i?.gameName);
                 return {
                     description: i?.description,
@@ -87,7 +80,7 @@ async function registerEndpoints() {
                     clientUri: `/clients/${titleData?.gameid}/index.html`
                 }
             })
-            let donegame = allYourgames.filter((i)=>i.gameover).map(i => {
+            let donegame = allYourgames.filter((i) => i.gameover).map(i => {
                 let titleData = gameList.find((j) => j.gameid == i?.gameName);
                 return {
                     description: i?.description,
@@ -187,7 +180,7 @@ async function putSetGameName(ctx: Koa.Context) {
     if (ctx.isAuthenticated()) {
         // If player is in game, can set the name
         var game = await Game.Find(body.gameId);
-        if (!game?.players?.find((i)=>i.userId == ctx?.state?.user?.userId)) {
+        if (!game?.players?.find((i) => i.userId == ctx?.state?.user?.userId)) {
             ctx.response.status = 401;
             return;
         }
@@ -236,10 +229,23 @@ async function registerPartials() {
     Handlebars.registerPartial('main', await (await Fs.readFile("templates/main.hbs")).toString());
 }
 
-function main() {
+var runResult: any;
+
+async function main() {
+    const DEVELOPMENT = process.env['NODE_ENV'] == "development";
     if (DEVELOPMENT) {
         console.log("Detected development mode");
     }
+    // Wait for pool before DB
+    await Pool();
+    const db = new PostgresStore(process.env['DB']!);
+    const PORT = 2230;
+    const server = Server({ games: games, db: db, generateCredentials: generateCredentials, authenticateCredentials: authCredentials })
+    const COOKIE_KEY = process.env['COOKIE_KEY'] ?? "koa.session"
+    const APP_KEY = process.env['APP_KEY'] ?? "veryverysecret"
+    const gameList: IGameDefinition[] = require("../games.json");
+
+    await sleep(10);
     let session_config = {
         key: COOKIE_KEY,
         maxAge: 86400000,
@@ -252,15 +258,18 @@ function main() {
         secure: !DEVELOPMENT, /** (boolean) secure cookie*/
         store: new DbSession()
     }
-    server.app.keys = [APP_KEY];
-    server.app.use(session(session_config, server.app));
     server.app.use(passport.initialize());
     server.app.use(passport.session());
-    server.db = db;
+    server.db = db!;
+    server.app.keys = [APP_KEY];
+    server.app.use(session(session_config, server.app));
 
-    registerPartials().then(() => {
-        registerEndpoints()
-    })
-        .then(() => server.run(PORT))
-        .catch((e) => console.log(e));
+    await registerPartials();
+    await registerEndpoints(server.router, gameList);
+    server.run(PORT);
 }
+
+
+(async function () {
+    await main();
+})();
