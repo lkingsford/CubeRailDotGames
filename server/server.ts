@@ -56,74 +56,18 @@ function getCommonState(ctx: Koa.Context) {
 }
 
 async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[]) {
-
     // This might be better datadriven, but keeping this until amount of pages is untenable
     var aboutCompiled = Handlebars.compile((await Fs.readFile("templates/about.hbs")).toString());
     var lobbyCompiled = Handlebars.compile((await Fs.readFile("templates/lobby.hbs")).toString());
     router.get("/", async (ctx: Koa.Context) => {
         if (!ctx.isAuthenticated()) {
-            ctx.body = aboutCompiled({ state: getCommonState(ctx) });
+            ctx.redirect("/about");
         }
         else {
-            // TBD if this is a performance issue. It will improve with paging.
-            let allGames = (await GameModel.FindAll());
-            let allYourgames = allGames.filter((i)=>i.players?.some((j)=>j.userId == ctx?.state?.user?.userId));
-            let yourgame = allYourgames.filter((i) => !i.gameover).map(i => {
-                let titleData = gameList.find((j) => j.gameid == i?.gameName);
-                return {
-                    description: i?.description,
-                    title: titleData?.title,
-                    version: titleData?.version,
-                    players: i?.players?.map((k) => k.name).join(', '),
-                    matchId: i?.gameId,
-                    gameId: titleData?.gameid,
-                    remaining: i?.openSlots,
-                    playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
-                    clientUri: `/clients/${titleData?.gameid}/index.html`
-                }
-            })
-            let donegame = allYourgames.filter((i) => i.gameover).map(i => {
-                let titleData = gameList.find((j) => j.gameid == i?.gameName);
-                return {
-                    description: i?.description,
-                    title: titleData?.title,
-                    version: titleData?.version,
-                    players: i?.players?.map((k) => k.name).join(', '),
-                    matchId: i?.gameId,
-                    gameId: titleData?.gameid,
-                    playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
-                    clientUri: `/clients/${titleData?.gameid}/index.html`
-                }
-            })
-            let opengame: any = (await GameModel.FindOpen(ctx?.state?.user?.userId)).map(i => {
-                let titleData = gameList.find((j) => j.gameid == i?.gameName);
-                return {
-                    description: i?.description,
-                    title: titleData?.title,
-                    version: titleData?.version,
-                    players: i?.players?.map((k) => k.name).join(', '),
-                    matchId: i?.gameId,
-                    remaining: i?.openSlots,
-                    gameId: titleData?.gameid
-                }
-            })
-            let allOtherActiveGames = allGames.filter((i)=>!i.players?.some((j)=>j.userId == ctx?.state?.user?.userId)).map(i => {
-                let titleData = gameList.find((j) => j.gameid == i?.gameName);
-                return {
-                    description: i?.description,
-                    title: titleData?.title,
-                    version: titleData?.version,
-                    players: i?.players?.map((k) => k.name).join(', '),
-                    matchId: i?.gameId,
-                    remaining: i?.openSlots,
-                    gameId: titleData?.gameid,
-                    clientUri: `/clients/${titleData?.gameid}/index.html`
-                }                
-            });
-
-            ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame, donegame: donegame, otherActive: allOtherActiveGames });
+            ctx.redirect("/lobby");
         }
     });
+
 
     router.get("/about", async (ctx: Koa.Context) => {
         ctx.body = aboutCompiled({ state: getCommonState(ctx) });
@@ -146,6 +90,72 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
             state: getCommonState(ctx),
             games: gameOptions
         });
+    });
+
+    router.get("/lobby", async (ctx: Koa.Context) => {
+        // TBD if this is a performance issue. It will improve with paging.
+        let authenticated = ctx.isAuthenticated();
+        let allGames = (await GameModel.FindAll());
+        let yourgame: any[] = [];
+        let donegame: any[] = [];
+        if (authenticated) {
+            let allYourgames = allGames.filter((i) => i.players?.some((j) => j.userId == ctx?.state?.user?.userId));
+            yourgame = allYourgames.filter((i) => !i.gameover).map(i => {
+                let titleData = gameList.find((j) => j.gameid == i?.gameName);
+                return {
+                    description: i?.description,
+                    title: titleData?.title,
+                    version: titleData?.version,
+                    players: i?.players?.map((k) => k.name).join(', '),
+                    matchId: i?.gameId,
+                    gameId: titleData?.gameid,
+                    remaining: i?.openSlots,
+                    playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
+                    clientUri: `/clients/${titleData?.gameid}/index.html`
+                }
+            })
+            donegame = allYourgames.filter((i) => i.gameover).map(i => {
+                let titleData = gameList.find((j) => j.gameid == i?.gameName);
+                return {
+                    description: i?.description,
+                    title: titleData?.title,
+                    version: titleData?.version,
+                    players: i?.players?.map((k) => k.name).join(', '),
+                    matchId: i?.gameId,
+                    gameId: titleData?.gameid,
+                    playerId: i?.players?.find((k) => k.userId == ctx?.state?.user?.userId)?.id,
+                    clientUri: `/clients/${titleData?.gameid}/index.html`
+                }
+            })
+        }
+        let opengame: any = (await GameModel.FindOpen(ctx?.state?.user?.userId)).map(i => {
+            let titleData = gameList.find((j) => j.gameid == i?.gameName);
+            return {
+                description: i?.description,
+                title: titleData?.title,
+                version: titleData?.version,
+                players: i?.players?.map((k) => k.name).join(', '),
+                matchId: i?.gameId,
+                remaining: i?.openSlots,
+                gameId: titleData?.gameid
+            }
+        })
+
+        let allOtherActiveGames = allGames.filter((i) => !i.players?.some((j) => j.userId == ctx?.state?.user?.userId)).map(i => {
+            let titleData = gameList.find((j) => j.gameid == i?.gameName);
+            return {
+                description: i?.description,
+                title: titleData?.title,
+                version: titleData?.version,
+                players: i?.players?.map((k) => k.name).join(', '),
+                matchId: i?.gameId,
+                remaining: i?.openSlots,
+                gameId: titleData?.gameid,
+                clientUri: `/clients/${titleData?.gameid}/index.html`
+            }
+        });
+
+        ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame, donegame: donegame, otherActive: allOtherActiveGames });
     });
 
     router.get("/logout", async (ctx: Koa.Context) => {
