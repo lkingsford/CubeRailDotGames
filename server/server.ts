@@ -217,7 +217,8 @@ async function postLogin(ctx: Koa.Context) {
 async function getGetCredentials(ctx: Koa.Context) {
     let authenticated = ctx.isAuthenticated();
     if (!authenticated) {
-        ctx.status = 401
+        ctx.status = 200;
+        ctx.body = "DummyObserver";
         return;
     }
     let cred = await Credentials.CreateCredential(ctx.state!.user!.userId);
