@@ -65,7 +65,9 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
             ctx.body = aboutCompiled({ state: getCommonState(ctx) });
         }
         else {
-            let allYourgames = (await GameModel.FindByPlayer(ctx?.state?.user?.userId));
+            // TBD if this is a performance issue. It will improve with paging.
+            let allGames = (await GameModel.FindAll());
+            let allYourgames = allGames.filter((i)=>i.players?.some((j)=>j.userId == ctx?.state?.user?.userId));
             let yourgame = allYourgames.filter((i) => !i.gameover).map(i => {
                 let titleData = gameList.find((j) => j.gameid == i?.gameName);
                 return {
@@ -105,7 +107,21 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
                     gameId: titleData?.gameid
                 }
             })
-            ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame, donegame: donegame });
+            let allOtherActiveGames = allGames.filter((i)=>!i.players?.some((j)=>j.userId == ctx?.state?.user?.userId)).map(i => {
+                let titleData = gameList.find((j) => j.gameid == i?.gameName);
+                return {
+                    description: i?.description,
+                    title: titleData?.title,
+                    version: titleData?.version,
+                    players: i?.players?.map((k) => k.name).join(', '),
+                    matchId: i?.gameId,
+                    remaining: i?.openSlots,
+                    gameId: titleData?.gameid,
+                    clientUri: `/clients/${titleData?.gameid}/index.html`
+                }                
+            });
+
+            ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame, donegame: donegame, otherActive: allOtherActiveGames });
         }
     });
 
