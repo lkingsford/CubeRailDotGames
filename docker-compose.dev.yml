@@ -47,6 +47,6 @@ services:
             SERVER_IMAGE: dev
         volumes:
         - ./nginx/etc_nginx/templates:/etc/nginx/templates:ro
-        - ./dist-client:/var/www/clients:ro
+        - ./clients:/var/www/clients:ro
         - ./static:/var/www/static:ro
 
