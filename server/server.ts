@@ -6,13 +6,13 @@ import * as Handlebars from 'handlebars';
 import * as Fs from 'fs/promises';
 import { Session as DbSession } from './db/session'
 import { User, UserCreateResult } from './db/user'
-import { IGameDefinition } from './IGameDefinition';
+import { GameDefinition } from './GameDefinition';
 import { Game, Game as GameModel } from './db/game';
 import { Credentials } from './db/credentials';
 import { promisify } from 'util';
 import { Pool } from './db/db';
 import Router = require("koa-router");
-import { ICubeRailContext } from "./context";
+import { CubeRailContext } from "./CubeRailContext";
 const sleep = promisify(setTimeout);
 const http = require('http')
 
@@ -47,7 +47,7 @@ const authCredentials = async (credentials: string, playerMetadata: IPlayerMetad
 }
 
 
-function getCommonState(ctx: ICubeRailContext) {
+function getCommonState(ctx: CubeRailContext) {
     let authenticated = ctx.isAuthenticated();
     return {
         username: ctx.state!.user?.username,
@@ -55,11 +55,11 @@ function getCommonState(ctx: ICubeRailContext) {
     }
 }
 
-async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[]) {
+async function registerEndpoints(router: KoaRouter, gameList: GameDefinition[]) {
     // This might be better datadriven, but keeping this until amount of pages is untenable
     var aboutCompiled = Handlebars.compile((await Fs.readFile("templates/about.hbs")).toString());
     var lobbyCompiled = Handlebars.compile((await Fs.readFile("templates/lobby.hbs")).toString());
-    router.get("/", async (ctx: ICubeRailContext) => {
+    router.get("/", async (ctx: CubeRailContext) => {
         if (!ctx.isAuthenticated()) {
             ctx.redirect("/about");
         }
@@ -69,17 +69,17 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
     })
 
 
-    router.get("/about", async (ctx: ICubeRailContext) => {
+    router.get("/about", async (ctx: CubeRailContext) => {
         ctx.body = aboutCompiled({ state: getCommonState(ctx) });
     });
 
     var newuserCompiled = Handlebars.compile((await Fs.readFile("templates/newuser.hbs")).toString());
-    router.get("/newuser", async (ctx: ICubeRailContext) => {
+    router.get("/newuser", async (ctx: CubeRailContext) => {
         ctx.body = newuserCompiled({ state: getCommonState(ctx) });
     });
 
     var createGameCompiled = Handlebars.compile((await Fs.readFile("templates/createGame.hbs")).toString());
-    router.get("/createGame", async (ctx: ICubeRailContext) => {
+    router.get("/createGame", async (ctx: CubeRailContext) => {
         if (!ctx.isAuthenticated()) {
             ctx.response.status = 401;
             return;
@@ -92,7 +92,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
         });
     });
 
-    router.get("/lobby", async (ctx: ICubeRailContext) => {
+    router.get("/lobby", async (ctx: CubeRailContext) => {
         // TBD if this is a performance issue. It will improve with paging.
         let authenticated = ctx.isAuthenticated();
         let allGames = (await GameModel.FindAll());
@@ -158,13 +158,13 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
         ctx.body = lobbyCompiled({ state: getCommonState(ctx), yourgame: yourgame, opengame: opengame, donegame: donegame, otherActive: allOtherActiveGames });
     });
 
-    router.get("/logout", async (ctx: ICubeRailContext) => {
+    router.get("/logout", async (ctx: CubeRailContext) => {
         ctx.logout();
         ctx.redirect('/');
     });
 
     var loginCompiled = Handlebars.compile((await Fs.readFile("templates/login.hbs")).toString());
-    router.get("/login", async (ctx: ICubeRailContext) => {
+    router.get("/login", async (ctx: CubeRailContext) => {
         ctx.body = loginCompiled({ state: getCommonState(ctx) });
     });
     router.post("/login_user", koaBody(), postLogin);
@@ -176,7 +176,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
     router.put("/set_game_name", koaBody(), putSetGameName);
 }
 
-async function putRegister(ctx: ICubeRailContext) {
+async function putRegister(ctx: CubeRailContext) {
     var body = JSON.parse(ctx.request.body);
     let result = await User.CreateUser(body.username, body.password);
     switch (result.result) {
@@ -201,7 +201,7 @@ async function putRegister(ctx: ICubeRailContext) {
     }
 }
 
-async function putSetGameName(ctx: ICubeRailContext) {
+async function putSetGameName(ctx: CubeRailContext) {
     var body = JSON.parse(ctx.request.body);
     if (ctx.isAuthenticated()) {
         // If player is in game, can set the name
@@ -222,7 +222,7 @@ async function putSetGameName(ctx: ICubeRailContext) {
     return;
 }
 
-async function postLogin(ctx: ICubeRailContext) {
+async function postLogin(ctx: CubeRailContext) {
     return passport.authenticate('local', (err: any, user: User, info: any, status: any) => {
         if (err) {
             console.log('error logging in')
@@ -240,7 +240,7 @@ async function postLogin(ctx: ICubeRailContext) {
     })(ctx);
 }
 
-async function getGetCredentials(ctx: ICubeRailContext) {
+async function getGetCredentials(ctx: CubeRailContext) {
     let authenticated = ctx.isAuthenticated();
     if (!authenticated) {
         ctx.status = 200;
@@ -266,7 +266,7 @@ async function main() {
     const PORT = 2230;
     const COOKIE_KEY = process.env['COOKIE_KEY'] ?? "koa.session"
     const APP_KEY = process.env['APP_KEY'] ?? "veryverysecret"
-    const gameList: IGameDefinition[] = require("../games.json");
+    const gameList: GameDefinition[] = require("../games.json");
     const app = new Koa();
     const router = new Router()
 

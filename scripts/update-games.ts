@@ -1,18 +1,18 @@
 import { Clone, Repository, Oid, Reference, Revparse, Checkout, Commit } from "nodegit";
 import * as fs from "fs";
 import * as path from 'path';
-import { IGameDefinition } from "../server/IGameDefinition";
+import { GameDefinition } from "../server/GameDefinition";
 import * as child from 'child_process';
 import * as fsx from "fs-extra";
 import { rmdir } from "fs/promises";
 
-const games: IGameDefinition[] = require("../games.json")
+const games: GameDefinition[] = require("../games.json")
 
 const gamerepos = "gamerepos"
 const gamefiles = "games"
 const clientstatic = "clients"
 
-async function updateRepo(game: IGameDefinition) {
+async function updateRepo(game: GameDefinition) {
     console.log("Updating repo for %s", game.gameid);
     var target = path.join(gamerepos, game.gameid);
     var justCloned: boolean = false;
@@ -36,7 +36,7 @@ async function updateRepo(game: IGameDefinition) {
     console.log("%s repo is ready", game.gameid)
 }
 
-async function extractGameTs(game: IGameDefinition) {
+async function extractGameTs(game: GameDefinition) {
     console.log("Getting game.ts for %s", game.gameid);
     return new Promise<void>(function (resolve) {
         fs.copyFile(path.join(gamerepos, game.gameid, "game", "game.ts"),
@@ -45,7 +45,7 @@ async function extractGameTs(game: IGameDefinition) {
     });
 }
 
-async function generateGameslistTs(games: IGameDefinition[]) {
+async function generateGameslistTs(games: GameDefinition[]) {
     console.log("Generating games.ts")
     var output: string = "";
     output += games.map((i,idx) => `import { ${i.object} as ${i.object}_${idx} } from "./${i.gameid}"`)
@@ -56,7 +56,7 @@ async function generateGameslistTs(games: IGameDefinition[]) {
     await fsx.writeFile(path.join(gamefiles, "games.ts"), output);
 }
 
-async function installClientPackages(game: IGameDefinition) {
+async function installClientPackages(game: GameDefinition) {
     console.log("Installing client packages for %s", game.gameid);
     await new Promise<void>(function (resolve) {
         var npm = child.spawn("npm", ["--prefix", path.join(gamerepos, game.gameid), "install"]);
@@ -66,7 +66,7 @@ async function installClientPackages(game: IGameDefinition) {
     });
 }
 
-async function compileClient(game: IGameDefinition) {
+async function compileClient(game: GameDefinition) {
     console.log("Compiling client packages for %s", game.gameid);
     await new Promise<void>(function (resolve) {
         var env = {... process.env};
@@ -78,7 +78,7 @@ async function compileClient(game: IGameDefinition) {
     });
 }
 
-async function extractClientDist(game: IGameDefinition) {
+async function extractClientDist(game: GameDefinition) {
     await rmdir(path.join(clientstatic, game.gameid), { recursive: true});
     console.log("Copying distribution for %s", game.gameid);
     await fsx.copy(path.join(gamerepos, game.gameid, "dist-client"), path.join(clientstatic, game.gameid), { recursive: true });

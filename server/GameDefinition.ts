@@ -1,4 +1,4 @@
-export interface IGameDefinition {
+export interface GameDefinition {
     repository: string;
     hash: string;
     object: string;
