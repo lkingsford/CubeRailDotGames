@@ -1,5 +1,7 @@
+import { Client } from "./client";
+
 export type PlayerId = number
-export type Action = (playerId: PlayerId, action: Serializable) => ActionResult;
+export type ActionFn = (client: Client, playerId: PlayerId, action: Serializable) => ActionResult;
 export type Serializable = any
 
 export enum ActionSuccess {
@@ -10,7 +12,8 @@ export enum ActionSuccess {
 
 export interface ActionResult {
     status: ActionSuccess,
-    newState: GameState
+    newState: GameState,
+    nextPlayer: PlayerId
 }
 
 export interface GameState {
