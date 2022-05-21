@@ -99,7 +99,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
         let yourgame: any[] = [];
         let donegame: any[] = [];
         if (authenticated) {
-            let allYourgames = allGames.filter((i) => i.players?.some((j) => j.userId == ctx?.state.user.userId));
+            let allYourgames = allGames.filter((i) => i.players?.some((j) => j.userId == ctx?.state.user?.userId));
             yourgame = allYourgames.filter((i) => !i.gameover).map(i => {
                 let titleData = gameList.find((j) => j.gameid == i?.gameName);
                 return {
@@ -110,7 +110,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
                     matchId: i?.gameId,
                     gameId: titleData?.gameid,
                     remaining: i?.openSlots,
-                    playerId: i?.players?.find((k) => k.userId == ctx?.state.user.userId)?.id,
+                    playerId: i?.players?.find((k) => k.userId == ctx?.state.user?.userId)?.id,
                     clientUri: `/clients/${titleData?.gameid}/index.html`
                 }
             })
@@ -123,12 +123,12 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
                     players: i?.players?.map((k) => k.name).join(', '),
                     matchId: i?.gameId,
                     gameId: titleData?.gameid,
-                    playerId: i?.players?.find((k) => k.userId == ctx?.state.user.userId)?.id,
+                    playerId: i?.players?.find((k) => k.userId == ctx?.state.user?.userId)?.id,
                     clientUri: `/clients/${titleData?.gameid}/index.html`
                 }
             })
         }
-        let opengame: any = (await GameModel.FindOpen(ctx?.state.user.userId)).map(i => {
+        let opengame: any = (await GameModel.FindOpen(ctx.state.user?.userId)).map(i => {
             let titleData = gameList.find((j) => j.gameid == i?.gameName);
             return {
                 description: i?.description,
@@ -141,7 +141,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
             }
         })
 
-        let allOtherActiveGames = allGames.filter((i) => !i.players?.some((j) => j.userId == ctx?.state.user.userId)).map(i => {
+        let allOtherActiveGames = allGames.filter((i) => !i.players?.some((j) => j.userId == ctx?.state.user?.userId)).map(i => {
             let titleData = gameList.find((j) => j.gameid == i?.gameName);
             return {
                 description: i?.description,
@@ -206,7 +206,7 @@ async function putSetGameName(ctx: Koa.Context) {
     if (ctx.isAuthenticated()) {
         // If player is in game, can set the name
         var game = await Game.Find(body.gameId);
-        if (!game?.players?.find((i) => i.userId == ctx?.state.user.userId)) {
+        if (!game?.players?.find((i) => i.userId == ctx?.state.user?.userId)) {
             ctx.response.status = 401;
             return;
         }
@@ -247,7 +247,7 @@ async function getGetCredentials(ctx: Koa.Context) {
         ctx.body = "DummyObserver";
         return;
     }
-    let cred = await Credentials.CreateCredential(ctx.state.user.userId);
+    let cred = await Credentials.CreateCredential(ctx.state.user?.userId);
     ctx.status = 200;
     ctx.body = cred;
 }
