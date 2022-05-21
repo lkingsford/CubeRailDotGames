@@ -1,4 +1,3 @@
-import { systems } from "pixi.js";
 import { Pool } from "./db";
 
 export interface IGameUser {
@@ -150,6 +149,6 @@ export class Game {
         }
         finally {
             client.release();
-        }                
+        }
     }
 }
