@@ -21,6 +21,9 @@ services:
             - "2229:80"
         volumes:
             - /var/lib/pgadmin
+        dns:
+            - 208.67.222.222
+            - 127.0.0.11
 
     dev:
         build: dev
@@ -31,7 +34,8 @@ services:
             - ~/.ssh:/home/node/.ssh:ro
         expose:
             - "2230"
-        environment: 
+            - "3000"
+        environment:
             DB: postgres://train:choochoo@db:5432/train
             NODE_ENV: development
             COOKIE_KEY: cuberail.dev
@@ -42,11 +46,10 @@ services:
     nginx:
         image: nginx:1.19
         ports:
-        - "80:80"
+            - "80:80"
         environment:
             SERVER_IMAGE: dev
         volumes:
-        - ./nginx/etc_nginx/templates:/etc/nginx/templates:ro
-        - ./clients:/var/www/clients:ro
-        - ./static:/var/www/static:ro
-
+            - ./nginx/etc_nginx/templates:/etc/nginx/templates:ro
+            - ./clients:/var/www/clients:ro
+            - ./static:/var/www/static:ro

@@ -6,3 +6,5 @@ dist-client
 gamerepos
 games
 clients
+cr_*
+client_source/*
