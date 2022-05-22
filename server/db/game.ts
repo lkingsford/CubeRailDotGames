@@ -14,6 +14,9 @@ export class Game {
     updatedAt?: Date;
     openSlots?: number;
     description?: string;
+    // Not doing a full get the current player to save the join/load where not
+    // needed
+    currentPlayerId?: number;
 
     private static PlayersFromResult(row: any): IGameUser[] {
         var returns: IGameUser[] = [];
@@ -73,7 +76,18 @@ export class Game {
             const q = {
                 // TODO: Make this way less awful
                 // This relies on json for gameover because boardgame.io doesn't seem to correctly set it
-                text: `SELECT id, "gameName", players, state->'ctx'->>'gameover' as gameover, "updatedAt", description FROM "Games" LEFT JOIN "game_metadata" ON ("game_metadata"."gameId" = "Games"."id")`
+                text: `
+                SELECT
+                    id,
+                    "gameName",
+                    players,
+                    state->'ctx'->>'gameover' as gameover,
+                    "updatedAt",
+                    description,
+                    players->(state->'ctx'->>'currentPlayer')->'credentials' as "currentPlayerUserId"
+                FROM "Games" 
+                LEFT JOIN "game_metadata" ON ("game_metadata"."gameId" = "Games"."id")
+                `
             }
             let result = await client.query(q)
             return result.rows.map((row => {
@@ -85,6 +99,7 @@ export class Game {
                 game.updatedAt = row.updatedAt;
                 game.description = row.description;
                 game.openSlots = this.OpenSlotsFromResults(row.players);
+                game.currentPlayerId = row.currentPlayerUserId;
                 return game;
             }));
         }

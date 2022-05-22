@@ -3,7 +3,6 @@
 cuberail.games
 {{/inline}}
 {{#*inline "content"}}
-{{state.loggedin}}
 <div class="row">
     <h1>Lobby</h1>
     <form action="/createGame">
@@ -16,76 +15,80 @@ cuberail.games
 {{#if state.loggedin}}
 <div class="row">
     {{#each yourgame}}
-    <div class="three columns game_card">
-        <div class="game_card_description">{{description}}</div>
-        <div class="game_card_title">{{title}}</div>
-        <div class="game_card_version">{{version}}</div>
-        <div class="game_card_players">Players: {{players}}</div>
-        <div class="game_card_players">({{remaining}} spaces remaining)</div>
-        <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="{{playerId}}"
-            data-gameid="{{gameId}}" data-matchid="{{matchId}}">Enter</button>
+    {{#if playerIsCurrent}}
+    <div class="three columns game_card waiting">
+        {{else}}
+        <div class="three columns game_card">
+            {{/if}}
+            <div class="game_card_description">{{description}}</div>
+            <div class="game_card_title">{{title}}</div>
+            <div class="game_card_version">{{version}}</div>
+            <div class="game_card_players">Players: {{players}}</div>
+            <div class="game_card_players">({{remaining}} spaces remaining)</div>
+            <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="{{playerId}}"
+                data-gameid="{{gameId}}" data-matchid="{{matchId}}">Enter</button>
+        </div>
+        {{/each}}
     </div>
-    {{/each}}
-</div>
-{{/if}}
-<div class="row">
-    <h2>Open Games</h2>
-</div>
-<div class="row">
-    {{#if state.loggedin}}
-    {{#each opengame}}
-    <div class="three columns game_card">
-        <div class="game_card_description">{{description}}</div>
-        <div class="game_card_title">{{title}}</div>
-        <div class="game_card_version">{{version}}</div>
-        <div class="game_card_players">Players {{players}}</div>
-        <div class="game_card_players">({{remaining}} spaces remaining)</div>
-        <button onclick="lobby_joinGame(this)" data-gameid="{{gameId}}" data-matchid="{{matchId}}">Join</button>
-    </div>
-    {{/each}}
-    {{else}}
-    {{#each opengame}}
-    <div class="three columns game_card">
-        <div class="game_card_description">{{description}}</div>
-        <div class="game_card_title">{{title}}</div>
-        <div class="game_card_version">{{version}}</div>
-        <div class="game_card_players">Players {{players}}</div>
-        <div class="game_card_players">({{remaining}} spaces remaining)</div>
-    </div>
-    {{/each}}
     {{/if}}
-</div>
-{{#if state.loggedin}}
-<div class="row">
-    <h2>Your Finished Games</h2>
-</div>
-<div class="row">
-    {{#each donegame}}
-    <div class="three columns game_card">
-        <div class="game_card_description">{{description}}</div>
-        <div class="game_card_title">{{title}}</div>
-        <div class="game_card_version">{{version}}</div>
-        <div class="game_card_players">Players {{players}}</div>
-        <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="{{playerId}}"
-            data-gameid="{{gameId}}" data-matchid="{{matchId}}">Enter</button>
+    <div class="row">
+        <h2>Open Games</h2>
     </div>
-    {{/each}}
-</div>
-{{/if}}
-<div class="row">
-    <h2>Other player's games</h2>
-</div>
-<div class="row">
-    {{#each otherActive}}
-    <div class="three columns game_card">
-        <div class="game_card_description">{{description}}</div>
-        <div class="game_card_title">{{title}}</div>
-        <div class="game_card_version">{{version}}</div>
-        <div class="game_card_players">Players {{players}}</div>
-        <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="-1"
-            data-gameid="{{gameId}}" data-matchid="{{matchId}}">Observe</button>
+    <div class="row">
+        {{#if state.loggedin}}
+        {{#each opengame}}
+        <div class="three columns game_card">
+            <div class="game_card_description">{{description}}</div>
+            <div class="game_card_title">{{title}}</div>
+            <div class="game_card_version">{{version}}</div>
+            <div class="game_card_players">Players {{players}}</div>
+            <div class="game_card_players">({{remaining}} spaces remaining)</div>
+            <button onclick="lobby_joinGame(this)" data-gameid="{{gameId}}" data-matchid="{{matchId}}">Join</button>
+        </div>
+        {{/each}}
+        {{else}}
+        {{#each opengame}}
+        <div class="three columns game_card">
+            <div class="game_card_description">{{description}}</div>
+            <div class="game_card_title">{{title}}</div>
+            <div class="game_card_version">{{version}}</div>
+            <div class="game_card_players">Players {{players}}</div>
+            <div class="game_card_players">({{remaining}} spaces remaining)</div>
+        </div>
+        {{/each}}
+        {{/if}}
     </div>
-    {{/each}}
-</div>
-{{/inline}}
-{{/main}}
+    {{#if state.loggedin}}
+    <div class="row">
+        <h2>Your Finished Games</h2>
+    </div>
+    <div class="row">
+        {{#each donegame}}
+        <div class="three columns game_card">
+            <div class="game_card_description">{{description}}</div>
+            <div class="game_card_title">{{title}}</div>
+            <div class="game_card_version">{{version}}</div>
+            <div class="game_card_players">Players {{players}}</div>
+            <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="{{playerId}}"
+                data-gameid="{{gameId}}" data-matchid="{{matchId}}">Enter</button>
+        </div>
+        {{/each}}
+    </div>
+    {{/if}}
+    <div class="row">
+        <h2>Other player's games</h2>
+    </div>
+    <div class="row">
+        {{#each otherActive}}
+        <div class="three columns game_card">
+            <div class="game_card_description">{{description}}</div>
+            <div class="game_card_title">{{title}}</div>
+            <div class="game_card_version">{{version}}</div>
+            <div class="game_card_players">Players {{players}}</div>
+            <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="-1"
+                data-gameid="{{gameId}}" data-matchid="{{matchId}}">Observe</button>
+        </div>
+        {{/each}}
+    </div>
+    {{/inline}}
+    {{/main}}
