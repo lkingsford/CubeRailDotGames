@@ -7,6 +7,9 @@
     "start": "node dist/server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "mkdir -p dist && cp games.json dist/games.json && npx tsc",
+    "build-prod": "npm run clean && npm run update-games && npm run build && npm run package",
+    "package": "tar -cvf cr_$(date '+%Y-%m-%d.%H%M%S').tar dist clients templates static",
+    "clean": "rm -rf dist clients gamerepos games",
     "update-games": "npx ts-node scripts/update-games.ts",
     "serve": "node dist/server/server.js",
     "start-dev": "npx ts-node server/server.ts"
