@@ -111,7 +111,8 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
                     gameId: titleData?.gameid,
                     remaining: i?.openSlots,
                     playerId: i?.players?.find((k) => k.userId == ctx?.state.user?.userId)?.id,
-                    clientUri: `/clients/${titleData?.gameid}/index.html`
+                    clientUri: `/clients/${titleData?.gameid}/index.html`,
+                    playerIsCurrent: i?.currentPlayerId == ctx.state.user.userId
                 }
             })
             donegame = allYourgames.filter((i) => i.gameover).map(i => {
