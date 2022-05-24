@@ -174,18 +174,22 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
 
     router.get("/get_credentials", koaBody(), getGetCredentials);
 
-    router.put("/set_game_name", koaBody(), putSetGameName);
-
     // Default 'join' permits joining a game twice. Not allowed.
-    router.use("/games/:name/:id/join", async (ctx, next) => {
-        let game = await GameModel.Find(ctx.params.id);
-        if (game?.players?.some((i) => { return i.userId == ctx.state.user?.userId })) {
-            ctx.response.body = "Attempting to join same game twice"
-            ctx.response.status = 400
-            return;
-        }
-        await next();
-    });
+    router.use("/games/:name/:id/join", joinGame);
+
+    // Set game name when creating
+    router.use("/games/:name/create", createGame)
+}
+
+
+async function joinGame(ctx: Koa.Context, next: Koa.Next) {
+    let game = await GameModel.Find(ctx.params.id);
+    if (game?.players?.some((i) => { return i.userId == ctx.state.user?.userId })) {
+        ctx.response.body = "Attempting to join same game twice"
+        ctx.response.status = 400
+        return;
+    }
+    await next();
 }
 
 async function putRegister(ctx: Koa.Context) {
@@ -213,25 +217,17 @@ async function putRegister(ctx: Koa.Context) {
     }
 }
 
-async function putSetGameName(ctx: Koa.Context) {
-    var body = JSON.parse(ctx.request.body);
-    if (ctx.isAuthenticated()) {
-        // If player is in game, can set the name
-        var game = await Game.Find(body.gameId);
-        if (!game?.players?.find((i) => i.userId == ctx?.state.user?.userId)) {
-            ctx.response.status = 401;
-            return;
-        }
-        // If is empty or whitespace
-        if (body.description.match(/^ *$/) !== null) {
-            body.description = `${ctx.state.user.username}'s game`;
-        }
-        Game.SaveMetadata(game.gameId!, body.description);
-        ctx.response.status = 200;
-        return;
+async function createGame(ctx: Koa.Context, next: Koa.Next) {
+    await next()
+    let gameId = ctx.body.matchID;
+    let desiredName = ctx.request.body.name;
+    var game = await Game.Find(gameId);
+    // If is empty or whitespace
+    if (desiredName.match(/^ *$/) !== null) {
+        desiredName = `${ctx.state.user.username}'s game`;
     }
-    ctx.response.status = 401;
-    return;
+    Game.SaveMetadata(game!.gameId!, desiredName);
+    ctx.response.status = 200;
 }
 
 async function postLogin(ctx: Koa.Context) {
