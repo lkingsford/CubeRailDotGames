@@ -175,6 +175,17 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
     router.get("/get_credentials", koaBody(), getGetCredentials);
 
     router.put("/set_game_name", koaBody(), putSetGameName);
+
+    // Default 'join' permits joining a game twice. Not allowed.
+    router.use("/games/:name/:id/join", async (ctx, next) => {
+        let game = await GameModel.Find(ctx.params.id);
+        if (game?.players?.some((i) => { return i.userId == ctx.state.user?.userId })) {
+            ctx.response.body = "Attempting to join same game twice"
+            ctx.response.status = 400
+            return;
+        }
+        await next();
+    });
 }
 
 async function putRegister(ctx: Koa.Context) {
