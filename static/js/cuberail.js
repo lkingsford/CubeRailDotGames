@@ -139,7 +139,7 @@ function createGame_updateButtons() {
         var button = document.createElement("button");
         button.innerText = `Hotseat ${i} player${i > 1 ? "s" : ""}`;
         button.dataset["players"] = i;
-        button.onclick = (e) => { window.location.replace(`/clients/${selectedGameE.id}?playerCount=${e.target.dataset["players"]}`) };
+        button.onclick = (e) => { window.location = `/clients/${selectedGameE.id}?playerCount=${e.target.dataset["players"]}` };
         buttonDiv.appendChild(button);
     }
 }
@@ -150,11 +150,12 @@ function lobby_joinGame(o) {
 
     joinGame(gameId, matchId, 0, () => { window.location.replace('/') });
 }
+
 function lobby_enterGame(o) {
     var playerId = o.dataset['playerid'];
     var matchId = o.dataset['matchid'];
     var clienturi = o.dataset['clienturi'];
     uri = clienturi + `?matchId=${matchId}&playerId=${playerId}`
 
-    window.location.replace(uri);
+    window.location = uri;
 }
