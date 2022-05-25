@@ -105,6 +105,39 @@ function joinGame(gameId, matchId, playerId, doneCallback) {
     request.send(JSON.stringify({ playerName: STATE.username, playerID: playerId }));
 }
 
+function leaveGame(gameId, matchId, playerId, doneCallback) {
+    let data = new FormData();
+    data.append('playerName', STATE.username);
+    data.append('playerID', `${playerId}`);
+    // TODO: Prevent needing to get creds, again
+    let credRequest = new XMLHttpRequest();
+    credRequest.open("get", "/get_credentials")
+    credRequest.onreadystatechange = () => {
+        if (credRequest.readyState == 4 && credRequest.status == 200) {
+            let creds = credRequest.responseText
+            let playerIdRequest = new XMLHttpRequest();
+            playerIdRequest.open(`get`, `/get_match_player_id/${matchId}`)
+            playerIdRequest.onreadystatechange = () => {
+
+                if (playerIdRequest.readyState == 4 && playerIdRequest.status == 200) {
+                    let playerId = playerIdRequest.responseText;
+                    let leaveRequest = new XMLHttpRequest();
+                    leaveRequest.open(`post`, `/games/${gameId}/${matchId}/leave`)
+                    leaveRequest.setRequestHeader("content-type", "application/json");
+                    leaveRequest.onreadystatechange = doneCallback
+                    leaveRequest.send(JSON.stringify({
+                        credentials: creds,
+                        playerID: playerId
+                    }))
+                }
+            }
+            playerIdRequest.send()
+        }
+    }
+    credRequest.send()
+}
+
+
 function createGame_onLoad() {
     createGame_updateButtons();
 }
@@ -158,4 +191,11 @@ function lobby_enterGame(o) {
     uri = clienturi + `?matchId=${matchId}&playerId=${playerId}`
 
     window.location = uri;
+}
+
+function lobby_leaveGame(o) {
+    var gameId = o.dataset['gameid'];
+    var matchId = o.dataset['matchid'];
+
+    leaveGame(gameId, matchId, 0, () => { window.location.replace('/') });
 }
