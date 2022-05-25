@@ -3,17 +3,18 @@
 <head>
   <title>{{> title }}</title>
   <meta charset="utf-8" />
-  <link rel="stylesheet" href="static/css/normalize.css">
-  <link rel="stylesheet" href="static/css/skeleton.css">
-  <link rel="stylesheet" href="static/css/cuberail.css">
+  <!-- Version {{state.version}} -->
+  <link rel="stylesheet" href="static/css/normalize.css?version={{state.version}}">
+  <link rel="stylesheet" href="static/css/skeleton.css?version={{state.version}}">
+  <link rel="stylesheet" href="static/css/cuberail.css?version={{state.version}}">
   <link rel="icon" type="image/png" href="/static/favicon-16x16.png" sizes="16x16">
   <link rel="icon" type="image/png" href="/static/favicon-32x32.png" sizes="32x32">
   <link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96">
-  <script src="static/js/cuberail.js"></script>
+  <script src="static/js/cuberail.js?version={{state.version}}"></script>
   <script type="text/javascript">
-  var STATE = {
-    username: "{{state.username}}",
-  }
+    var STATE = {
+      username: "{{state.username}}",
+    }
   </script>
 </head>
 
