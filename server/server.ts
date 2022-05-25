@@ -42,8 +42,17 @@ const generateCredentials = (ctx: Koa.DefaultContext): string => {
 
 const authCredentials = async (credentials: string, playerMetadata: IPlayerMetadata): Promise<boolean> => {
     if (credentials) {
+        if (!playerMetadata) {
+            // Player is not in game - needs auth true for observation
+            // (but not authenticating against a player who can do things)
+            return true;
+        }
         if (!playerMetadata.credentials) { return false }
         return await Credentials.CheckCredential(Number(playerMetadata.credentials!), credentials);
+    }
+    if (!playerMetadata) {
+        // Same observer deal as above, but not logged int
+        return true;
     }
     return false;
 }
