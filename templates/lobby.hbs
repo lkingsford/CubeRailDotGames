@@ -24,9 +24,14 @@ cuberail.games
             <div class="game_card_title">{{title}}</div>
             <div class="game_card_version">{{version}}</div>
             <div class="game_card_players">Players: {{players}}</div>
+            {{#if anyRemaining}}
             <div class="game_card_players">({{remaining}} spaces remaining)</div>
+            <button onclick="lobby_leaveGame(this)" data-playerid="{{playerId}}" data-gameid="{{gameId}}"
+                data-matchid="{{matchId}}">Leave</button>
+            {{else}}
             <button onclick="lobby_enterGame(this)" data-clienturi="{{clientUri}}" data-playerid="{{playerId}}"
                 data-gameid="{{gameId}}" data-matchid="{{matchId}}">Enter</button>
+            {{/if}}
         </div>
         {{/each}}
     </div>

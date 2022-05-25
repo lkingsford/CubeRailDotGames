@@ -110,6 +110,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
                     matchId: i?.gameId,
                     gameId: titleData?.gameid,
                     remaining: i?.openSlots,
+                    anyRemaining: i?.openSlots ?? 0 > 0,
                     playerId: i?.players?.find((k) => k.userId == ctx?.state.user?.userId)?.id,
                     clientUri: `/clients/${titleData?.gameid}/index.html`,
                     playerIsCurrent: i?.currentPlayerId == ctx.state.user.userId
@@ -173,6 +174,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
     router.put("/register_user", koaBody(), putRegister);
 
     router.get("/get_credentials", koaBody(), getGetCredentials);
+    router.get("/get_match_player_id/:id", koaBody(), getPlayerIdInGame);
 
     // Default 'join' permits joining a game twice. Not allowed.
     router.use("/games/:name/:id/join", joinGame);
@@ -183,6 +185,7 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
 
 
 async function joinGame(ctx: Koa.Context, next: Koa.Next) {
+
     let game = await GameModel.Find(ctx.params.id);
     if (game?.players?.some((i) => { return i.userId == ctx.state.user?.userId })) {
         ctx.response.body = "Attempting to join same game twice"
@@ -191,6 +194,26 @@ async function joinGame(ctx: Koa.Context, next: Koa.Next) {
     }
     await next();
 }
+
+
+async function getPlayerIdInGame(ctx: Koa.Context) {
+    if (!ctx.isAuthenticated()) {
+        ctx.response.status = 401;
+        return;
+    }
+
+    let game = await GameModel.Find(ctx.params.id);
+    let playerInGame = game?.players?.find((i) => { return i.userId == ctx.state.user?.userId; });
+    if (!playerInGame) {
+        ctx.response.status = 400;
+        ctx.response.body = "Player attempting to leave game that they're not in";
+        return;
+    }
+
+    ctx.response.body = playerInGame.id
+}
+
+
 
 async function putRegister(ctx: Koa.Context) {
     var body = JSON.parse(ctx.request.body);
