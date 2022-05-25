@@ -19,6 +19,8 @@ const sleep = promisify(setTimeout);
 // Not using types due to the types being older versions of Koa
 const passport = require('koa-passport');
 
+var hash: string = "";
+
 interface IPlayerMetadata {
     id: number;
     name?: string;
@@ -52,7 +54,22 @@ function getCommonState(ctx: Koa.Context) {
     return {
         username: ctx.state.user?.username,
         loggedin: authenticated,
+        version: hash
     }
+}
+
+
+async function getVersion() {
+    if (hash == "") {
+        let hashFile = await Fs.readFile("version.txt")
+        if (!hashFile) {
+            hash = "DEV"
+        }
+        else {
+            hash = hashFile.toString();
+        }
+    }
+    return hash
 }
 
 async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[]) {
@@ -321,6 +338,8 @@ async function main() {
     server.app.use(passport.session());
     server.db = db!;
     server.app.keys = [APP_KEY];
+
+    await getVersion();
 
     await registerPartials();
     // @ts-ignore
