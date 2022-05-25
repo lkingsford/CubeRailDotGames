@@ -97,10 +97,6 @@ async function registerEndpoints(router: KoaRouter, gameList: IGameDefinition[])
 
     var createGameCompiled = Handlebars.compile((await Fs.readFile("templates/createGame.hbs")).toString());
     router.get("/createGame", async (ctx: Koa.Context) => {
-        if (!ctx.isAuthenticated()) {
-            ctx.response.status = 401;
-            return;
-        }
         let gameOptions = gameList.filter((i) => i.available)
             .map((i) => ({ id: i.gameid, title: `${i.title} (${i.version})`, minPlayers: i.minPlayers, maxPlayers: i.maxPlayers }));
         ctx.body = createGameCompiled({

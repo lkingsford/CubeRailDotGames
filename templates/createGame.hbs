@@ -4,6 +4,7 @@ cuberail.games
 {{/inline}}
 {{#*inline "content"}}
 <h1>Create New Game</h1>
+{{#if state.loggedin}}
 <div class="row">
     <div class="two columns">
         Description
@@ -12,16 +13,24 @@ cuberail.games
         <input type="text" id="description" />
     </div>
 </div>
+{{else}}
+<div class="row">
+    <div class="twelve columns">
+        You must log in to create a multiplayer game. You can still start a hotseat game though.
+    </div>
+</div>
+{{/if}}
 <div class="row">
     <div class="two columns">
         Game
     </div>
     <div class="two columns">
-    <select name="gamename" id="gamename" onchange="createGame_onChange()" >
-        {{#each games}}
-        <option id="{{id}}" value="{{id}}" data-minPlayers="{{minPlayers}}" data-maxPlayers="{{maxPlayers}}" >{{title}} ({{minPlayers}}-{{maxPlayers}} players)</option>
-        {{/each}}
-    </select>
+        <select name="gamename" id="gamename" onchange="createGame_onChange()">
+            {{#each games}}
+            <option id="{{id}}" value="{{id}}" data-minPlayers="{{minPlayers}}" data-maxPlayers="{{maxPlayers}}">
+                {{title}} ({{minPlayers}}-{{maxPlayers}} players)</option>
+            {{/each}}
+        </select>
     </div>
 </div>
 <div class="row" id="buttons">

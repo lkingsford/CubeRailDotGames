@@ -154,15 +154,17 @@ function createGame_updateButtons() {
     var selectedGameE = document.getElementById(result)
     var minPlayers = Number(selectedGameE.dataset['minplayers']);
     var maxPlayers = Number(selectedGameE.dataset['maxplayers']);
-    for (var i = minPlayers; i <= maxPlayers; ++i) {
-        var buttonDiv = document.createElement("div");
-        buttonDiv.classList.add("four", "columns");
-        buttonsElement.appendChild(buttonDiv);
-        var button = document.createElement("button");
-        button.innerText = `Start ${i} player${i > 1 ? "s" : ""}`;
-        button.dataset["players"] = i;
-        button.onclick = (e) => { startGame(e.target.dataset["players"]); }
-        buttonDiv.appendChild(button);
+    if (STATE.username != "") {
+        for (var i = minPlayers; i <= maxPlayers; ++i) {
+            var buttonDiv = document.createElement("div");
+            buttonDiv.classList.add("four", "columns");
+            buttonsElement.appendChild(buttonDiv);
+            var button = document.createElement("button");
+            button.innerText = `Start ${i} player${i > 1 ? "s" : ""}`;
+            button.dataset["players"] = i;
+            button.onclick = (e) => { startGame(e.target.dataset["players"]); }
+            buttonDiv.appendChild(button);
+        }
     }
     var hotseatButtonsElement = document.querySelector("#hotseatButtons");
     for (var i = minPlayers; i <= maxPlayers; ++i) {
