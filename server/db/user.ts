@@ -8,6 +8,13 @@ export enum UserCreateResult {
     userExists
 }
 
+export enum Role {
+    observer = 0,
+    player = 1,
+    gamemaster = 2,
+    admin = 3
+}
+
 export class User {
     public userId?: number;
     public username: string = "";
@@ -15,7 +22,7 @@ export class User {
     public set password(val: string) {
         this.passwordHash = getHash(val);
     }
-    public role: string = "";
+    public roles: Role[] = []
 
     constructor() {
     }
@@ -25,7 +32,7 @@ export class User {
         result.userId = row.user_id;
         result.username = row.username;
         result.passwordHash = row.pass_hash;
-        result.role = row.role;
+        result.roles = User.RolesFromString(row.role);
         return result;
     }
 
@@ -75,7 +82,7 @@ export class User {
             if (this.userId == undefined) {
                 const select = {
                     text: 'INSERT INTO users (username, pass_hash, role) VALUES ($1, $2, $3) RETURNING user_id;',
-                    values: [this.username, this.passwordHash, this.role]
+                    values: [this.username, this.passwordHash, User.RolesToString(this.roles)]
                 }
                 let result = await client.query(select);
                 await client.release();
@@ -83,7 +90,7 @@ export class User {
             } else {
                 const update = {
                     text: 'UPDATE user SET username = $1, pass_hash = $2, role = $3 WHERE user_id = $4',
-                    values: [this.username, this.passwordHash, this.role, this.userId]
+                    values: [this.username, this.passwordHash, User.RolesToString(this.roles), this.userId]
                 }
                 await client.query(update);
             }
@@ -124,8 +131,25 @@ export class User {
         let user = new User();
         user.username = username;
         user.password = password;
-        user.role = "p";
         await user.Save();
         return {result: UserCreateResult.success, user: user};
+    }
+
+    public static RolesToString(roles: Role[]): string {
+        // Storing in a simple way until I have a need for something more complicated
+        return (roles.includes(Role.observer) ? "o" : "") +
+               (roles.includes(Role.admin) ? "a" : "") +
+               (roles.includes(Role.gamemaster) ? "g" : "") +
+               (roles.includes(Role.player) ? "p" : "")
+    }
+
+    public static RolesFromString(value: string): Role[] {
+        let returnValue: Role[] = [];
+        if (value.includes("o")) { returnValue.push(Role.observer); };
+        if (value.includes("p")) { returnValue.push(Role.player); };
+        if (value.includes("g")) { returnValue.push(Role.gamemaster); };
+        if (value.includes("a")) { returnValue.push(Role.admin); };
+
+        return returnValue;
     }
 }
