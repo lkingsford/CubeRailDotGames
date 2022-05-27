@@ -325,7 +325,7 @@ async function main() {
 
     let session_config = {
         key: COOKIE_KEY,
-        maxAge: 86400000,
+        maxAge: 86400000 * 90, /** 90 days between session/logins */
         autoCommit: true, /** (boolean) automatically commit headers (default true) */
         overwrite: true, /** (boolean) can overwrite or not (default true) */
         httpOnly: true, /** (boolean) httpOnly or not (default true) */
