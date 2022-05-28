@@ -16,7 +16,11 @@
       username: "{{state.username}}",
     }
   </script>
+  {{> pageHeader }}
 </head>
+
+{{#*inline "pageHeader"}}
+{{/inline}}
 
 <body>
   <div class="container">
@@ -44,6 +48,11 @@
       </div>
       <div class="two columns u-pull-right">
         <a href="login">Sign in</a>
+      </div>
+      {{/if}}
+      {{#if state.admin }}
+      <div class="two columns u-pull-right">
+        <a href="admin">Admin Tools</a>
       </div>
       {{/if}}
     </div>
