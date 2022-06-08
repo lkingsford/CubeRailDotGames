@@ -73,6 +73,19 @@ export class User {
         }
     }
 
+    public static async FindAll(): Promise<User[] | undefined> {
+        let client = await (await Pool()).connect();
+        try {
+            const q = {
+                text: "SELECT user_id, username, pass_hash, role FROM users;",
+            };
+            let result = await client.query(q);
+            return result.rows.map((row) => this.FromRow(row));
+        } finally {
+            client.release();
+        }
+    }
+
     public async Save(): Promise<void> {
         let client = await (await Pool()).connect();
         try {
@@ -90,7 +103,7 @@ export class User {
                 this.userId = result.rows[0].user_id;
             } else {
                 const update = {
-                    text: "UPDATE user SET username = $1, pass_hash = $2, role = $3 WHERE user_id = $4",
+                    text: "UPDATE users SET username = $1, pass_hash = $2, role = $3 WHERE user_id = $4",
                     values: [
                         this.username,
                         this.passwordHash,
