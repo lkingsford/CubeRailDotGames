@@ -6,5 +6,17 @@
 cuberail.games - Admin Tools
 {{/inline}}
 {{#*inline "content"}}
+<h1>User Management</h1>
+<table>
+{{#each user}}
+<tr>
+    <td>{{userId}}</td><td>{{username}}</td>
+    <td>
+        <input id="password_{{userId}}"/>
+        <button onclick="ChangePassword_Click(this)" data-userid="{{userId}}">Change Password</button>
+    </td>
+</tr>
+{{/each}}
+</table>
 {{/inline}}
 {{/main}}

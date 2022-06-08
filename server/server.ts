@@ -252,7 +252,10 @@ async function registerEndpoints(
             ctx.status = 401;
             ctx.body = "Unauthorized to access admin tools";
         }
-        ctx.body = adminCompiled({ state: getCommonState(ctx) });
+        ctx.body = adminCompiled({
+            state: getCommonState(ctx),
+            user: await User.FindAll(),
+        });
     });
 
     let loginCompiled = Handlebars.compile(
@@ -273,6 +276,22 @@ async function registerEndpoints(
 
     // Set game name when creating
     router.use("/games/:name/create", createGame);
+
+    router.put("/admin/change_password", koaBody(), adminChangePassword);
+}
+
+async function adminChangePassword(ctx: Koa.Context) {
+    if (
+        !(ctx.isAuthenticated() && ctx.state.user?.roles.includes(Role.admin))
+    ) {
+        ctx.status = 401;
+        ctx.body = "Unauthorized to access admin tools";
+    }
+    var body = ctx.request.body;
+    var user = await User.Find(body.userId);
+    user!.password = body.password;
+    await user?.Save();
+    ctx.status = 200;
 }
 
 async function joinGame(ctx: Koa.Context, next: Koa.Next) {
