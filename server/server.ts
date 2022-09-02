@@ -276,6 +276,23 @@ async function registerEndpoints(
     });
     router.post("/login_user", koaBody(), postLogin);
 
+    let profileCompiled = Handlebars.compile(
+        (await Fs.readFile("templates/profile.hbs")).toString()
+    );
+    router.get("/profile", async (ctx: Koa.Context) => {
+        if (!ctx.isAuthenticated()) {
+            ctx.status = 401;
+            ctx.body = "Unauthorized to access profile";
+            return;
+        }
+        ctx.body = profileCompiled({
+            state: getCommonState(ctx),
+            username: ctx.state.user?.username,
+        });
+    });
+    router.put("/profile/change_password", koaBody(), profileChangePassword);
+    router.put("/profile/change_username", koaBody(), profileChangeUsername);
+
     router.put("/register_user", koaBody(), putRegister);
 
     router.get("/get_credentials", koaBody(), getGetCredentials);
@@ -302,6 +319,30 @@ async function adminChangePassword(ctx: Koa.Context) {
     var body = ctx.request.body;
     var user = await User.Find(body.userId);
     user!.password = body.password;
+    await user?.Save();
+    ctx.status = 200;
+}
+
+async function profileChangeUsername(ctx: Koa.Context) {
+    if (!ctx.isAuthenticated()) {
+        ctx.status = 401;
+        return;
+    }
+    var body = ctx.request.body;
+    var user: User = ctx.state.user!;
+    user.username = body.username;
+    await user?.Save();
+    ctx.status = 200;
+}
+
+async function profileChangePassword(ctx: Koa.Context) {
+    if (!ctx.isAuthenticated()) {
+        ctx.status = 401;
+        return;
+    }
+    var body = ctx.request.body;
+    var user: User = ctx.state.user!;
+    user.password = body.password;
     await user?.Save();
     ctx.status = 200;
 }
