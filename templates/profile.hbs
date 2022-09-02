@@ -1,0 +1,23 @@
+{{#> main}}
+{{#*inline "pageHeader"}}
+<script src="static/js/profile.js?version={{state.version}}"></script>
+{{/inline}}
+{{#*inline "title"}}
+cuberail.games - Profile
+{{/inline}}
+{{#*inline "content"}}
+<h1>Profile</h1>
+    <table>
+        <tr>
+            <td>Username</td>
+            <td><input id="username" value="{{username}}"/></td>
+            <td><button onclick="ChangeUsername_Click(this)">Change Username</button></td>
+        </tr>
+        <tr>
+            <td>Password</td>
+            <td><input id="password"/></td>
+            <td><button onclick="ChangePassword_Click(this)">Change Password</button></td>
+        </tr>
+</table>
+{{/inline}}
+{{/main}}
