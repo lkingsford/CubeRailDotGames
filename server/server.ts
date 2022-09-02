@@ -73,8 +73,8 @@ function getCommonState(ctx: Koa.Context) {
         version: hash,
         observer: ctx.state.user?.roles.includes(Role.observer),
         player: ctx.state.user?.roles.includes(Role.player),
-        gamemaster: ctx.state.user?.roles.includes(Role.gamemaster),
-        admin: ctx.state.user?.roles.includes(Role.admin),
+        gamemaster: ctx.state.user?.isGamemaster(),
+        admin: ctx.state.user?.isAdmin(),
     };
 }
 
@@ -252,9 +252,18 @@ async function registerEndpoints(
             ctx.status = 401;
             ctx.body = "Unauthorized to access admin tools";
         }
+        let users = await User.FindAll();
+        let usersState = users!.map((u) => {
+            return {
+                userId: u.userId!,
+                username: u.username,
+                admin: u.isAdmin(),
+                gamemaster: u.isGamemaster(),
+            };
+        });
         ctx.body = adminCompiled({
             state: getCommonState(ctx),
-            user: await User.FindAll(),
+            user: usersState,
         });
     });
 
@@ -278,6 +287,7 @@ async function registerEndpoints(
     router.use("/games/:name/create", createGame);
 
     router.put("/admin/change_password", koaBody(), adminChangePassword);
+    router.put("/admin/save_roles", koaBody(), adminSaveRoles);
 }
 
 async function adminChangePassword(ctx: Koa.Context) {
@@ -290,6 +300,21 @@ async function adminChangePassword(ctx: Koa.Context) {
     var body = ctx.request.body;
     var user = await User.Find(body.userId);
     user!.password = body.password;
+    await user?.Save();
+    ctx.status = 200;
+}
+
+async function adminSaveRoles(ctx: Koa.Context) {
+    if (
+        !(ctx.isAuthenticated() && ctx.state.user?.roles.includes(Role.admin))
+    ) {
+        ctx.status = 401;
+        ctx.body = "Unauthorized to access admin tools";
+    }
+    var body = ctx.request.body;
+    var user = await User.Find(body.userId);
+    user!.SetRole(Role.admin, body.admin);
+    user!.SetRole(Role.gamemaster, body.gamemaster);
     await user?.Save();
     ctx.status = 200;
 }
