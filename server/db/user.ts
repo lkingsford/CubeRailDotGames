@@ -24,6 +24,22 @@ export class User {
     }
     public roles: Role[] = [];
 
+    public isAdmin(): boolean {
+        return this.roles.includes(Role.admin);
+    }
+
+    public isGamemaster(): boolean {
+        return this.roles.includes(Role.gamemaster);
+    }
+
+    public SetRole(role: Role, value: boolean) {
+        if (value) {
+            this.roles.push(role);
+        } else {
+            this.roles = this.roles.filter((i) => i != role);
+        }
+    }
+
     constructor() {}
 
     private static FromRow(row: any): User {

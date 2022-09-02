@@ -12,8 +12,15 @@ cuberail.games - Admin Tools
 <tr>
     <td>{{userId}}</td><td>{{username}}</td>
     <td>
-        <input id="password_{{userId}}"/>
-        <button onclick="ChangePassword_Click(this)" data-userid="{{userId}}">Change Password</button>
+        <div>
+            <input id="password_{{userId}}"/>
+            <button onclick="ChangePassword_Click(this)" data-userid="{{userId}}">Change Password</button>
+        </div>
+        <div>
+            <input type="checkbox" id="admin_{{userId}}" data-role="admin" {{#if admin}}checked{{/if}}>Admin</input>
+            <input type="checkbox" id="gamemaster_{{userId}}" data-role="gamemaster" {{#if gamemaster}}checked{{/if}}>Gamemaster</input>
+            <button onclick="SaveRoles_Click(this)" data-userid="{{userId}}">Save Role Changes</button>
+        </div>
     </td>
 </tr>
 {{/each}}
