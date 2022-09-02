@@ -251,6 +251,7 @@ async function registerEndpoints(
         ) {
             ctx.status = 401;
             ctx.body = "Unauthorized to access admin tools";
+            return;
         }
         let users = await User.FindAll();
         let usersState = users!.map((u) => {
@@ -296,6 +297,7 @@ async function adminChangePassword(ctx: Koa.Context) {
     ) {
         ctx.status = 401;
         ctx.body = "Unauthorized to access admin tools";
+        return;
     }
     var body = ctx.request.body;
     var user = await User.Find(body.userId);
@@ -310,6 +312,7 @@ async function adminSaveRoles(ctx: Koa.Context) {
     ) {
         ctx.status = 401;
         ctx.body = "Unauthorized to access admin tools";
+        return;
     }
     var body = ctx.request.body;
     var user = await User.Find(body.userId);
