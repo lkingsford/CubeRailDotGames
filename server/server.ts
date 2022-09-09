@@ -14,6 +14,7 @@ import { Game, Game as GameModel } from "./db/game";
 import { Credentials } from "./db/credentials";
 import { promisify } from "util";
 import { Pool } from "./db/db";
+import { passwordOk } from "./auth";
 const sleep = promisify(setTimeout);
 
 // Not using types due to the types being older versions of Koa
@@ -342,6 +343,11 @@ async function profileChangePassword(ctx: Koa.Context) {
     }
     var body = ctx.request.body;
     var user: User = ctx.state.user!;
+    if (!passwordOk(user.password)) {
+        ctx.response.status = 400;
+        ctx.response.body = "Invalid password - must be >8 characters";
+        return;
+    }
     user.password = body.password;
     await user?.Save();
     ctx.status = 200;
